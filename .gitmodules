@@ -1,0 +1,6 @@
+[submodule "lineformer"]
+	path = lineformer
+	url = https://github.com/TheJaeLal/LineFormer.git
+[submodule "chartdete_repo"]
+	path = chartdete_repo
+	url = https://github.com/pengyu965/ChartDete.git

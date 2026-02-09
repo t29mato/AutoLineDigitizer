@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python test:*)",
+      "Bash(python3:*)",
+      "Bash(source:*)",
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Bash(conda env list:*)",
+      "Bash(.venv/bin/python3:*)",
+      "Bash(.venv/bin/pip show:*)",
+      "Bash(.venv/bin/pip install:*)",
+      "Bash(curl:*)",
+      "Bash(../.venv/bin/pip install:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
