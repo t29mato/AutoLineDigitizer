@@ -8,11 +8,15 @@ import sys
 import os
 import re
 
-# Add chartdete_repo to path only if mmdet is not already imported
+# Project paths
+_src_dir = os.path.dirname(os.path.abspath(__file__))
+_project_root = os.path.dirname(_src_dir)
+
+# Add chartdete submodule to path only if mmdet is not already imported
 # This prevents duplicate hook registration when used with LineFormer
-_chartdete_repo_path = os.path.join(os.path.dirname(__file__), '..', 'chartdete_repo')
+_chartdete_path = os.path.join(_project_root, 'submodules', 'chartdete')
 if 'mmdet' not in sys.modules:
-    sys.path.insert(0, _chartdete_repo_path)
+    sys.path.insert(0, _chartdete_path)
 
 import torch
 import numpy as np
@@ -170,12 +174,10 @@ def load_chartdete_model(config_path=None, checkpoint_path=None, device='cpu'):
     global _model
 
     if config_path is None:
-        base_dir = os.path.dirname(__file__)
-        config_path = os.path.join(base_dir, 'cascade_rcnn_swin-t_fpn_LGF_VCE_PCE_coco_focalsmoothloss.py')
+        config_path = os.path.join(_project_root, 'config', 'chartdete_config.py')
 
     if checkpoint_path is None:
-        base_dir = os.path.dirname(__file__)
-        checkpoint_path = os.path.join(base_dir, 'checkpoint.pth')
+        checkpoint_path = os.path.join(_project_root, 'models', 'checkpoint.pth')
 
     _model = init_detector(config_path, checkpoint_path, device=device)
     return _model

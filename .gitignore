@@ -159,13 +159,11 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-# pytorch models
-*.pt
-*.pth
+# Model weights (download separately)
+models/*.pth
+models/*.pt
+!models/.gitkeep
 
 # Local test/data files (not for distribution)
 test_image/
 test_output/
-
-# ChartDete model checkpoint
-chartdete/checkpoint.pth

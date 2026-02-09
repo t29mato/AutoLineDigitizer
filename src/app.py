@@ -9,13 +9,19 @@ Output compatible with starry-digitizer and WebPlotDigitizer formats.
 import sys
 import os
 
-# Add lineformer submodule to path (must be before chartdete_repo to avoid hook conflicts)
-_base_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(_base_dir, 'lineformer'))
+# Project root is parent of src/
+_src_dir = os.path.dirname(os.path.abspath(__file__))
+_project_root = os.path.dirname(_src_dir)
+
+# Add lineformer submodule to path (must be before chartdete to avoid hook conflicts)
+sys.path.insert(0, os.path.join(_project_root, 'submodules', 'lineformer'))
 
 # Pre-import mmdet to prevent duplicate hook registration when ChartDete loads
 # This ensures the same mmdet instance is used by both LineFormer and ChartDete
 import mmdet  # noqa: F401
+
+# Add src to path for local imports
+sys.path.insert(0, _src_dir)
 
 import streamlit as st
 import cv2
@@ -39,9 +45,9 @@ def load_lineformer_model():
     """Load LineFormer model (cached)."""
     import infer
 
-    # Model weights in project root, config in lineformer submodule
-    CKPT = os.path.join(_base_dir, "iter_3000.pth")
-    CONFIG = os.path.join(_base_dir, "lineformer", "lineformer_swin_t_config.py")
+    # Model weights in models/, config in submodules/lineformer/
+    CKPT = os.path.join(_project_root, "models", "iter_3000.pth")
+    CONFIG = os.path.join(_project_root, "submodules", "lineformer", "lineformer_swin_t_config.py")
     DEVICE = "cpu"
 
     infer.load_model(CONFIG, CKPT, DEVICE)
@@ -51,7 +57,7 @@ def load_lineformer_model():
 @st.cache_resource
 def load_chartdete_model():
     """Load ChartDete model for axis detection (cached)."""
-    from chartdete import chartdete_infer
+    import chartdete_infer
     chartdete_infer.load_chartdete_model(device='cpu')
     return chartdete_infer
 

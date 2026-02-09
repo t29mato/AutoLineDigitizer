@@ -10,6 +10,27 @@ A Streamlit web application for extracting data from line chart images using [Li
   - [starry-digitizer](https://starrydigitizer.vercel.app/) ZIP
   - [WebPlotDigitizer](https://apps.automeris.io/wpd4/) TAR
 
+## Project Structure
+
+```
+LineFormer/
+├── src/                    # Source code
+│   ├── app.py              # Streamlit application
+│   └── chartdete_infer.py  # ChartDete inference wrapper
+├── config/                 # Configuration files
+│   └── chartdete_config.py # ChartDete model config
+├── models/                 # Model weights (not in git)
+│   ├── iter_3000.pth       # LineFormer model
+│   └── checkpoint.pth      # ChartDete model
+├── submodules/             # Git submodules
+│   ├── lineformer/         # LineFormer repository
+│   └── chartdete/          # ChartDete repository
+├── demo/                   # Demo images
+├── requirements.txt        # Python dependencies
+├── LICENSE
+└── README.md
+```
+
 ## Quick Start
 
 ```bash
@@ -21,30 +42,22 @@ cd LineFormer
 git submodule update --init --recursive
 
 # Install dependencies
-pip install -r requirements_streamlit.txt
+pip install -r requirements.txt
 
 # Download models (see Model Weights section below)
 
 # Run the app
-streamlit run streamlit_app.py
+streamlit run src/app.py
 ```
 
 ### Model Weights
 
-Download the following model weights:
+Download the following model weights and place them in the `models/` directory:
 
 | Model | Size | Source |
 |-------|------|--------|
 | LineFormer (`iter_3000.pth`) | 543MB | [Original Repository](https://drive.google.com/drive/folders/1K_zLZwgoUIAJtfjwfCU5Nv33k17R0O5T?usp=sharing) |
-| ChartDete (`chartdete/checkpoint.pth`) | 1.4GB | [ChartDete Repository](https://github.com/pengyu965/ChartDete/) |
-
-Place the model files in the following locations:
-```
-LineFormer/
-├── iter_3000.pth              # LineFormer model
-└── chartdete/
-    └── checkpoint.pth         # ChartDete model
-```
+| ChartDete (`checkpoint.pth`) | 1.4GB | [ChartDete Repository](https://github.com/pengyu965/ChartDete/) |
 
 ---
 
