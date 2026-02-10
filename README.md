@@ -79,7 +79,7 @@ Download the following model weights and place them in the `models/` directory:
 
 **Download instructions:**
 - **LineFormer**: Go to repository README → "Pretrained Weights" section → Download from Google Drive
-- **ChartDete**: Go to repository README → "Inference" section → Download `work_dirs.zip` from Google Drive → Extract `CACHED_line/checkpoint.pth`
+- **ChartDete**: Go to repository README → Download `work_dirs.zip` from Google Drive → Extract `cascade_rcnn_swin-t_fpn_LGF_VCE_PCE_coco_focalsmoothloss/checkpoint.pth`
 
 ---
 
