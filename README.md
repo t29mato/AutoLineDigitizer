@@ -4,12 +4,9 @@ A Streamlit web application for automatic line chart data extraction using [Line
 
 ## Demo
 
-
+### Demo Video
 
 https://github.com/user-attachments/assets/7ecb641e-f939-40a5-ad7b-54b64937fdd4
-
-
-
 
 ### Input / Output
 
@@ -77,8 +74,8 @@ Download the following model weights and place them in the `models/` directory:
 
 | Model | Size | Source |
 |-------|------|--------|
-| LineFormer (`iter_3000.pth`) | 543MB | [Original Repository](https://drive.google.com/drive/folders/1K_zLZwgoUIAJtfjwfCU5Nv33k17R0O5T?usp=sharing) |
-| ChartDete (`checkpoint.pth`) | 1.4GB | [ChartDete Repository](https://github.com/pengyu965/ChartDete/) |
+| LineFormer (`iter_3000.pth`) | 543MB | [Google Drive](https://drive.google.com/drive/folders/1K_zLZwgoUIAJtfjwfCU5Nv33k17R0O5T?usp=sharing) |
+| ChartDete (`checkpoint.pth`) | 1.4GB | [Google Drive](https://drive.google.com/file/d/1htEEzRVE9Qlppz8ZgyEPJ3OI1HHY6gDS/view?usp=sharing) |
 
 ---
 
