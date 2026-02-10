@@ -5,7 +5,10 @@ A Streamlit web application for automatic line chart data extraction using [Line
 ## Demo
 
 
-https://github.com/user-attachments/assets/eca28b11-f555-4c90-9fce-2e5ccbc0528b
+
+https://github.com/user-attachments/assets/7ecb641e-f939-40a5-ad7b-54b64937fdd4
+
+
 
 
 
