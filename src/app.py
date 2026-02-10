@@ -591,9 +591,10 @@ def main():
     st.title("📈 LineFormer - Chart Data Extraction")
     st.markdown("""
     Upload a chart image to extract line data automatically.
-    Output is compatible with **starry-digitizer** and **WebPlotDigitizer**.
+    Output is compatible with **[starry-digitizer](https://starrydigitizer.vercel.app/)** and **[WebPlotDigitizer](https://apps.automeris.io/wpd4/)**.
 
-    **[LineFormer Paper (ICDAR 2023)](https://arxiv.org/abs/2305.01837)**
+    **[LineFormer Paper (ICDAR 2023)](https://arxiv.org/abs/2305.01837)** |
+    **[ChartDete Paper (ICDAR 2023)](https://arxiv.org/abs/2305.04151)**
     """)
 
     # Sidebar settings
