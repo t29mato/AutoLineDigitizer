@@ -8,6 +8,12 @@ A Streamlit web application for automatic line chart data extraction using [Line
 |-------|--------|
 | ![Input](demo/10.3390_nano14040384_4i.png) | ![Output](demo/10.3390_nano14040384_4i_result.png) |
 
+### Export to Digitizer Tools
+
+| starry-digitizer | WebPlotDigitizer |
+|------------------|------------------|
+| ![starry-digitizer](demo/10.3390_nano14040384_4i_sd.png) | ![WebPlotDigitizer](demo/10.3390_nano14040384_4i_wpd.png) |
+
 ## Features
 
 - **Line Extraction**: Automatic line detection using LineFormer
