@@ -4,7 +4,11 @@ A Streamlit web application for automatic line chart data extraction using [Line
 
 ## Demo
 
-<video src="https://github.com/t29mato/AutoLineDigitizer/releases/download/v0.1.0/AutoLineDigitizerDemo.mp4" controls width="100%"></video>
+
+https://github.com/user-attachments/assets/eca28b11-f555-4c90-9fce-2e5ccbc0528b
+
+
+
 
 | Input | Output |
 |-------|--------|
