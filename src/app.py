@@ -37,7 +37,7 @@ from datetime import datetime
 
 # Page config
 st.set_page_config(
-    page_title="LineFormer - Chart Data Extraction",
+    page_title="AutoLineDigitizer",
     page_icon="📈",
     layout="wide"
 )
@@ -588,7 +588,7 @@ def create_wpd_tar(img, wpd_json, project_name="project"):
 
 
 def main():
-    st.title("📈 LineFormer - Chart Data Extraction")
+    st.title("📈 AutoLineDigitizer")
     st.markdown("""
     Upload a chart image to extract line data automatically.
     Output is compatible with **[starry-digitizer](https://starrydigitizer.vercel.app/)** and **[WebPlotDigitizer](https://apps.automeris.io/wpd4/)**.

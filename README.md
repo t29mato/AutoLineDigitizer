@@ -1,6 +1,12 @@
-# Line Chart Data Extractor
+# AutoLineDigitizer
 
-A Streamlit web application for extracting data from line chart images using [LineFormer](https://github.com/TheJaeLal/LineFormer) with automatic axis detection via [ChartDete](https://github.com/pengyu965/ChartDete/) and EasyOCR.
+A Streamlit web application for automatic line chart data extraction using [LineFormer](https://github.com/TheJaeLal/LineFormer) with automatic axis detection via [ChartDete](https://github.com/pengyu965/ChartDete/) and EasyOCR.
+
+## Demo
+
+| Input | Output |
+|-------|--------|
+| ![Input](demo/10.3390_nano14040384_4i.png) | ![Output](demo/10.3390_nano14040384_4i_result.png) |
 
 ## Features
 
