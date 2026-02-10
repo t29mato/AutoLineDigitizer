@@ -3,7 +3,7 @@
 LineFormer Streamlit App
 Chart line data extraction using LineFormer.
 Automatic axis detection using ChartDete + OCR.
-Output compatible with starry-digitizer and WebPlotDigitizer formats.
+Output compatible with StarryDigitizer and WebPlotDigitizer formats.
 """
 
 import sys
@@ -111,7 +111,7 @@ def detect_axis_calibration(chartdete_module, img):
         # Note: In calibration from OCR:
         #   y1_pixel/y1_value = top label (higher Y pixel, but could be higher or lower value)
         #   y2_pixel/y2_value = bottom label (lower Y pixel)
-        # In starry-digitizer/WPD format:
+        # In StarryDigitizer/WPD format:
         #   y1 = bottom point (lower Y pixel = higher on screen)
         #   y2 = top point (higher Y pixel = lower on screen)
         # So we swap y1 and y2 from OCR calibration
@@ -313,13 +313,13 @@ def draw_points_on_image(img, data_series, axis_config=None):
 
 def convert_to_starry_digitizer_format(data_series, img_shape, axis_config=None):
     """
-    Convert LineFormer output to starry-digitizer project.json format.
+    Convert LineFormer output to StarryDigitizer project.json format.
 
     axis_config: dict with x1, x2, y1, y2 pixel coordinates and values
     """
     timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
 
-    # Default axis set (user needs to calibrate in starry-digitizer)
+    # Default axis set (user needs to calibrate in StarryDigitizer)
     if axis_config is None:
         # Use image corners as default
         axis_set = {
@@ -385,7 +385,7 @@ def convert_to_starry_digitizer_format(data_series, img_shape, axis_config=None)
     # Convert datasets
     datasets = []
 
-    # Add empty dataset 1 (starry-digitizer convention)
+    # Add empty dataset 1 (StarryDigitizer convention)
     datasets.append({
         "id": 1,
         "name": "dataset 1",
@@ -436,7 +436,7 @@ def convert_to_starry_digitizer_format(data_series, img_shape, axis_config=None)
 def create_starry_digitizer_zip(img, project_json):
     """
     Create a ZIP file containing image.png and project.json
-    for starry-digitizer import.
+    for StarryDigitizer import.
     """
     zip_buffer = io.BytesIO()
 
@@ -591,7 +591,7 @@ def main():
     st.title("📈 AutoLineDigitizer")
     st.markdown("""
     Upload a chart image to extract line data automatically.
-    Output is compatible with **[starry-digitizer](https://starrydigitizer.vercel.app/)** and **[WebPlotDigitizer](https://apps.automeris.io/wpd4/)**.
+    Output is compatible with **[StarryDigitizer](https://starrydigitizer.vercel.app/)** and **[WebPlotDigitizer](https://apps.automeris.io/wpd4/)**.
 
     **[LineFormer Paper (ICDAR 2023)](https://arxiv.org/abs/2305.01837)** |
     **[ChartDete Paper (ICDAR 2023)](https://arxiv.org/abs/2305.04151)**
@@ -760,9 +760,9 @@ def main():
                             ocr_text.append(f"Y: [{', '.join(y_vals)}]")
                         st.caption(' | '.join(ocr_text))
         elif auto_axis:
-            axis_placeholder.warning("Could not auto-detect axis calibration. Manual calibration needed in WPD/starry-digitizer.")
+            axis_placeholder.warning("Could not auto-detect axis calibration. Manual calibration needed in WPD/StarryDigitizer.")
 
-        # Build starry-digitizer project
+        # Build StarryDigitizer project
         project_json = convert_to_starry_digitizer_format(
             data_series, img.shape, axis_config
         )
@@ -772,7 +772,7 @@ def main():
             data_series, img.shape, axis_config
         )
 
-        # Create ZIP file for starry-digitizer
+        # Create ZIP file for StarryDigitizer
         zip_buffer = create_starry_digitizer_zip(img, project_json)
 
         # Create TAR file for WebPlotDigitizer
@@ -790,7 +790,7 @@ def main():
 
         with col_dl1:
             st.download_button(
-                label="📦 starry-digitizer (.zip)",
+                label="📦 StarryDigitizer (.zip)",
                 data=zip_buffer.getvalue(),
                 file_name=zip_filename,
                 mime="application/zip",
@@ -817,7 +817,7 @@ def main():
                 )
 
         # Show JSON previews
-        with st.expander("Preview starry-digitizer project.json"):
+        with st.expander("Preview StarryDigitizer project.json"):
             json_str = json.dumps(project_json, indent=2, ensure_ascii=False)
             if len(json_str) > 5000:
                 st.code(json_str[:5000] + "\n... (truncated)", language="json")
@@ -833,7 +833,7 @@ def main():
 
         # Instructions
         st.info("""
-        **starry-digitizer:** Download ZIP → Open [starry-digitizer](https://starrydigitizer.vercel.app/) → Load Project
+        **StarryDigitizer:** Download ZIP → Open [StarryDigitizer](https://starrydigitizer.vercel.app/) → Load Project
 
         **WebPlotDigitizer:** Download TAR → Open [WPD](https://apps.automeris.io/wpd4/) → File → Load Project (.tar)
         """)

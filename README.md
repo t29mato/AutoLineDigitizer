@@ -10,16 +10,16 @@ A Streamlit web application for automatic line chart data extraction using [Line
 
 ### Export to Digitizer Tools
 
-| starry-digitizer | WebPlotDigitizer |
+| [StarryDigitizer](https://starrydigitizer.vercel.app/) | [WebPlotDigitizer](https://apps.automeris.io/wpd4/) |
 |------------------|------------------|
-| ![starry-digitizer](demo/10.3390_nano14040384_4i_sd.png) | ![WebPlotDigitizer](demo/10.3390_nano14040384_4i_wpd.png) |
+| ![StarryDigitizer](demo/10.3390_nano14040384_4i_sd.png) | ![WebPlotDigitizer](demo/10.3390_nano14040384_4i_wpd.png) |
 
 ## Features
 
 - **Line Extraction**: Automatic line detection using LineFormer
 - **Axis Detection**: Automatic axis label reading via ChartDete + OCR
 - **Export Formats**:
-  - [starry-digitizer](https://starrydigitizer.vercel.app/) ZIP
+  - [StarryDigitizer](https://starrydigitizer.vercel.app/) ZIP
   - [WebPlotDigitizer](https://apps.automeris.io/wpd4/) TAR
 
 ## Project Structure
