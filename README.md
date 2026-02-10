@@ -74,8 +74,12 @@ Download the following model weights and place them in the `models/` directory:
 
 | Model | Size | Source |
 |-------|------|--------|
-| LineFormer (`iter_3000.pth`) | 543MB | [Google Drive](https://drive.google.com/drive/folders/1K_zLZwgoUIAJtfjwfCU5Nv33k17R0O5T?usp=sharing) |
-| ChartDete (`checkpoint.pth`) | 1.4GB | [Google Drive](https://drive.google.com/file/d/1htEEzRVE9Qlppz8ZgyEPJ3OI1HHY6gDS/view?usp=sharing) |
+| LineFormer (`iter_3000.pth`) | 543MB | [LineFormer Repository](https://github.com/TheJaeLal/LineFormer) |
+| ChartDete (`checkpoint.pth`) | 1.4GB | [ChartDete Repository](https://github.com/pengyu965/ChartDete) |
+
+**Download instructions:**
+- **LineFormer**: Go to repository README → "Pretrained Weights" section → Download from Google Drive
+- **ChartDete**: Go to repository README → "Inference" section → Download `work_dirs.zip` from Google Drive → Extract `CACHED_line/checkpoint.pth`
 
 ---
 
