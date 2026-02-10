@@ -13,12 +13,15 @@ import os
 _src_dir = os.path.dirname(os.path.abspath(__file__))
 _project_root = os.path.dirname(_src_dir)
 
-# Add lineformer submodule to path (must be before chartdete to avoid hook conflicts)
+# Add ChartDete submodule to path FIRST (highest priority for custom mmdet models)
+sys.path.insert(0, os.path.join(_project_root, 'submodules', 'chartdete'))
+
+# Add lineformer submodule to path
 sys.path.insert(0, os.path.join(_project_root, 'submodules', 'lineformer'))
 
-# Pre-import mmdet to prevent duplicate hook registration when ChartDete loads
-# This ensures the same mmdet instance is used by both LineFormer and ChartDete
+# Import mmdet (uses ChartDete's mmdet which includes custom models like CascadeRoIHead_LGF)
 import mmdet  # noqa: F401
+from mmdet.models.roi_heads.cascade_roi_head_LGF import CascadeRoIHead_LGF  # noqa: F401
 
 # Add src to path for local imports
 sys.path.insert(0, _src_dir)

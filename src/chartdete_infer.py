@@ -12,11 +12,8 @@ import re
 _src_dir = os.path.dirname(os.path.abspath(__file__))
 _project_root = os.path.dirname(_src_dir)
 
-# Add chartdete submodule to path only if mmdet is not already imported
-# This prevents duplicate hook registration when used with LineFormer
+# ChartDete submodule path
 _chartdete_path = os.path.join(_project_root, 'submodules', 'chartdete')
-if 'mmdet' not in sys.modules:
-    sys.path.insert(0, _chartdete_path)
 
 import torch
 import numpy as np
