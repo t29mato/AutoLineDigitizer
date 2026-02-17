@@ -1,0 +1,128 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: false
+        default: ''
+
+jobs:
+  build-macos:
+    runs-on: macos-13
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install flet
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          pip install mmcv==2.1.0 -f https://download.openmmlab.com/mmcv/dist/cpu/torch2.1/index.html
+          pip install opencv-python-headless numpy scipy scikit-image bresenham
+          pip install easyocr
+          pip install Pillow
+
+      - name: Download EasyOCR models
+        run: |
+          mkdir -p ~/.EasyOCR/model
+          python -c "import easyocr; reader = easyocr.Reader(['en'], gpu=False)"
+          ls -la ~/.EasyOCR/model/
+
+      - name: Download model weights from release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p models
+
+          # Download LineFormer model
+          echo "Downloading LineFormer model..."
+          gh release download models --pattern "iter_3000.pth" --dir models || {
+            echo "Model not found in 'models' release. Please upload models first."
+            echo "Run: gh release create models models/iter_3000.pth models/checkpoint.pth --title 'Model Weights' --notes 'Model weights for AutoLineDigitizer'"
+            exit 1
+          }
+
+          # Download ChartDete model
+          echo "Downloading ChartDete model..."
+          gh release download models --pattern "checkpoint.pth" --dir models || {
+            echo "ChartDete model not found"
+            exit 1
+          }
+
+          ls -la models/
+
+      - name: Build macOS app
+        run: |
+          pyinstaller AutoLineDigitizer.spec --noconfirm
+
+      - name: Create ZIP archive
+        run: |
+          cd dist
+          zip -r AutoLineDigitizer-macOS.zip AutoLineDigitizer.app
+          ls -la
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AutoLineDigitizer-macOS
+          path: dist/AutoLineDigitizer-macOS.zip
+
+      - name: Get version
+        id: get_version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          elif [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "version=dev-$(date +%Y%m%d-%H%M%S)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.version != ''
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.get_version.outputs.version }}
+          name: Release ${{ steps.get_version.outputs.version }}
+          draft: false
+          prerelease: false
+          files: |
+            dist/AutoLineDigitizer-macOS.zip
+          body: |
+            ## AutoLineDigitizer ${{ steps.get_version.outputs.version }}
+
+            ### Download
+            - **macOS**: `AutoLineDigitizer-macOS.zip`
+
+            ### Installation (macOS)
+            1. Download and unzip `AutoLineDigitizer-macOS.zip`
+            2. Move `AutoLineDigitizer.app` to Applications folder
+            3. Right-click the app and select "Open" (required for first launch)
+            4. Click "Open" in the security dialog
+
+            ### Requirements
+            - macOS 11.0 (Big Sur) or later
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

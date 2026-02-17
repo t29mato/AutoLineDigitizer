@@ -23,6 +23,17 @@ import torchvision.ops as tv_ops
 # EasyOCR (lazy load)
 _ocr_reader = None
 
+# EasyOCR model directory for bundled app
+def _get_easyocr_model_dir():
+    """Get EasyOCR model directory, checking bundled location first."""
+    import sys
+    if getattr(sys, 'frozen', False):
+        # Running as PyInstaller bundle
+        bundled_dir = os.path.join(sys._MEIPASS, 'easyocr_models')
+        if os.path.exists(bundled_dir):
+            return bundled_dir
+    return None  # Use default (~/.EasyOCR/model)
+
 
 def _patch_mmcv_ops():
     """Patch mmcv ops to use torchvision for CPU."""
@@ -219,7 +230,13 @@ def get_ocr_reader():
     global _ocr_reader
     if _ocr_reader is None:
         import easyocr
-        _ocr_reader = easyocr.Reader(['en'], gpu=False)
+        model_dir = _get_easyocr_model_dir()
+        if model_dir:
+            # Use bundled models (no download needed)
+            _ocr_reader = easyocr.Reader(['en'], gpu=False, model_storage_directory=model_dir, download_enabled=False)
+        else:
+            # Normal execution - download if needed
+            _ocr_reader = easyocr.Reader(['en'], gpu=False)
     return _ocr_reader
 
 

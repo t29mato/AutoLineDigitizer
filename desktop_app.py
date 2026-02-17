@@ -9,7 +9,14 @@ import sys
 import os
 
 # Ensure the script's directory is in sys.path for local imports
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+# Handle both normal execution and PyInstaller bundled execution
+if getattr(sys, 'frozen', False):
+    # Running as PyInstaller bundle
+    SCRIPT_DIR = sys._MEIPASS
+else:
+    # Running as normal script
+    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 CHARTDETE_DIR = os.path.join(SCRIPT_DIR, "submodules", "chartdete")
 LINEFORMER_DIR = os.path.join(SCRIPT_DIR, "submodules", "lineformer")
 MMDET_DIR = os.path.join(LINEFORMER_DIR, "mmdetection")
@@ -444,8 +451,8 @@ def main(page: ft.Page):
     info_text = ft.Text("", size=14)
     axis_info_text = ft.Text("", size=12, color=ft.Colors.GREY_700)
 
-    # Settings controls
-    auto_axis_checkbox = ft.Checkbox(label="Auto-detect axis (ChartDete + OCR)", value=True)
+    # Axis detection status text (no checkbox - always on when available)
+    axis_status_text = ft.Text("", size=12)
 
     sort_dropdown = ft.Dropdown(
         label="Sort Lines",
@@ -481,9 +488,6 @@ def main(page: ft.Page):
 
     show_viz_checkbox = ft.Checkbox(label="Show visualization", value=True)
 
-    def on_auto_axis_change(e):
-        app.auto_axis = auto_axis_checkbox.value
-
     def on_downsample_change(e):
         app.downsample_mode = downsample_dropdown.value
         max_points_slider.visible = downsample_dropdown.value == "max_points"
@@ -506,7 +510,6 @@ def main(page: ft.Page):
         result_image.visible = app.show_visualization and app.result_image is not None
         page.update()
 
-    auto_axis_checkbox.on_change = on_auto_axis_change
     sort_dropdown.on_change = on_sort_change
     downsample_dropdown.on_change = on_downsample_change
     max_points_slider.on_change = on_max_points_change
@@ -666,7 +669,7 @@ def main(page: ft.Page):
         content=ft.Column([
             ft.Text("Settings", size=18, weight=ft.FontWeight.BOLD),
             ft.Divider(),
-            auto_axis_checkbox,
+            axis_status_text,
             ft.Divider(),
             sort_dropdown,
             ft.Divider(),
@@ -725,22 +728,20 @@ def main(page: ft.Page):
 
             # Check if ChartDete is available
             if not CHARTDETE_AVAILABLE:
-                auto_axis_checkbox.value = False
-                auto_axis_checkbox.disabled = True
-                auto_axis_checkbox.label = "Auto-detect axis (Not available)"
                 app.auto_axis = False
-                axis_info_text.value = "ChartDete not available - axis detection disabled"
+                axis_status_text.value = "Axis detection: Not available"
+                axis_status_text.color = ft.Colors.ORANGE_700
             else:
                 status_text.value = "Loading ChartDete..."
                 page.update()
                 try:
                     app.load_chartdete_model()
+                    axis_status_text.value = "Axis detection: Ready"
+                    axis_status_text.color = ft.Colors.GREEN_700
                 except Exception as e:
-                    auto_axis_checkbox.value = False
-                    auto_axis_checkbox.disabled = True
-                    auto_axis_checkbox.label = "Auto-detect axis (Failed to load)"
                     app.auto_axis = False
-                    axis_info_text.value = f"ChartDete error: {str(e)[:50]}"
+                    axis_status_text.value = f"Axis detection: Failed ({str(e)[:30]})"
+                    axis_status_text.color = ft.Colors.RED_700
 
             status_text.value = "Models loaded. Open an image to start."
             progress_ring.visible = False
