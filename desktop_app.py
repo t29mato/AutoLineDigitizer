@@ -48,8 +48,72 @@ import io
 import zipfile
 import tarfile
 import base64
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+
+# GitHub repository for model downloads
+GITHUB_REPO = "t29mato/AutoLineDigitizer"
+GITHUB_RELEASE_TAG = "models"
+
+# Model files to download
+MODEL_FILES = {
+    "iter_3000.pth": "LineFormer",
+    "checkpoint.pth": "ChartDete",
+}
+
+
+def get_models_dir():
+    """Get the models directory path. Uses user data directory for bundled apps."""
+    if getattr(sys, 'frozen', False):
+        # Bundled app: store models in user data directory
+        if sys.platform == 'darwin':
+            data_dir = os.path.join(os.path.expanduser('~'), 'Library', 'Application Support', 'AutoLineDigitizer')
+        elif sys.platform == 'win32':
+            data_dir = os.path.join(os.environ.get('LOCALAPPDATA', os.path.expanduser('~')), 'AutoLineDigitizer')
+        else:
+            data_dir = os.path.join(os.path.expanduser('~'), '.autolinedigitizer')
+        models_dir = os.path.join(data_dir, 'models')
+    else:
+        # Normal script: use project models directory
+        models_dir = os.path.join(SCRIPT_DIR, 'models')
+    os.makedirs(models_dir, exist_ok=True)
+    return models_dir
+
+
+def check_models_exist():
+    """Check if all required model files exist."""
+    models_dir = get_models_dir()
+    missing = []
+    for filename in MODEL_FILES:
+        if not os.path.exists(os.path.join(models_dir, filename)):
+            missing.append(filename)
+    return missing
+
+
+def download_model(filename, models_dir, progress_callback=None):
+    """Download a model file from GitHub Releases."""
+    url = f"https://github.com/{GITHUB_REPO}/releases/download/{GITHUB_RELEASE_TAG}/{filename}"
+    dest_path = os.path.join(models_dir, filename)
+    tmp_path = dest_path + '.tmp'
+
+    req = urllib.request.Request(url)
+    with urllib.request.urlopen(req) as response:
+        total_size = int(response.headers.get('Content-Length', 0))
+        downloaded = 0
+        block_size = 1024 * 1024  # 1MB
+
+        with open(tmp_path, 'wb') as f:
+            while True:
+                chunk = response.read(block_size)
+                if not chunk:
+                    break
+                f.write(chunk)
+                downloaded += len(chunk)
+                if progress_callback and total_size > 0:
+                    progress_callback(downloaded, total_size)
+
+    os.replace(tmp_path, dest_path)
 
 
 class LineFormerApp:
@@ -74,7 +138,8 @@ class LineFormerApp:
     def load_lineformer_model(self):
         """Load LineFormer model."""
         import infer
-        CKPT = os.path.join(SCRIPT_DIR, "models", "iter_3000.pth")
+        models_dir = get_models_dir()
+        CKPT = os.path.join(models_dir, "iter_3000.pth")
         CONFIG = os.path.join(LINEFORMER_DIR, "lineformer_swin_t_config.py")
         DEVICE = "cpu"
         infer.load_model(CONFIG, CKPT, DEVICE)
@@ -83,7 +148,14 @@ class LineFormerApp:
     def load_chartdete_model(self):
         """Load ChartDete model for axis detection."""
         import chartdete_infer
-        chartdete_infer.load_chartdete_model(device='cpu')
+        models_dir = get_models_dir()
+        config_path = os.path.join(SCRIPT_DIR, 'config', 'chartdete_config.py')
+        checkpoint_path = os.path.join(models_dir, 'checkpoint.pth')
+        chartdete_infer.load_chartdete_model(
+            config_path=config_path,
+            checkpoint_path=checkpoint_path,
+            device='cpu',
+        )
         self.chartdete_module = chartdete_infer
 
     def detect_axis_calibration(self, img):
@@ -719,9 +791,43 @@ def main(page: ft.Page):
         ], expand=True)
     )
 
+    # Download progress bar
+    download_progress = ft.ProgressBar(visible=False, width=400)
+
+    # Insert progress bar into the layout (after status_text row)
+    main_content.controls.insert(1, download_progress)
+
     # Load models on startup
     def load_models_async():
         try:
+            # Check and download missing models
+            missing = check_models_exist()
+            if missing:
+                models_dir = get_models_dir()
+                for filename in missing:
+                    model_name = MODEL_FILES[filename]
+                    status_text.value = f"Downloading {model_name} model..."
+                    download_progress.visible = True
+                    download_progress.value = 0
+                    page.update()
+
+                    def on_progress(downloaded, total, _name=model_name):
+                        download_progress.value = downloaded / total
+                        status_text.value = f"Downloading {_name}... {downloaded // (1024*1024)}MB / {total // (1024*1024)}MB"
+                        page.update()
+
+                    try:
+                        download_model(filename, models_dir, progress_callback=on_progress)
+                    except Exception as e:
+                        status_text.value = f"Download failed: {e}"
+                        download_progress.visible = False
+                        progress_ring.visible = False
+                        page.update()
+                        return
+
+                download_progress.visible = False
+                page.update()
+
             status_text.value = "Loading LineFormer..."
             page.update()
             app.load_lineformer_model()

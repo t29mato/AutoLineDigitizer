@@ -1,5 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 import os
+import sys
 from PyInstaller.utils.hooks import collect_submodules, collect_data_files
 
 # Get the directory containing this spec file
@@ -19,12 +20,8 @@ a = Analysis(
     ],
     binaries=[],
     datas=[
-        # Model weights
-        ('models', 'models'),
         # Config files
         ('config', 'config'),
-        # EasyOCR models (bundled for offline use)
-        (os.path.expanduser('~/.EasyOCR/model'), 'easyocr_models'),
         # LineFormer submodule (config files and line_utils)
         ('submodules/lineformer/lineformer_swin_t_config.py', 'submodules/lineformer'),
         ('submodules/lineformer/line_utils.py', 'submodules/lineformer'),
@@ -91,9 +88,10 @@ coll = COLLECT(
     name='AutoLineDigitizer',
 )
 
-app = BUNDLE(
-    coll,
-    name='AutoLineDigitizer.app',
-    icon=None,
-    bundle_identifier='com.lineformer.autolinedigitizer',
-)
+if sys.platform == 'darwin':
+    app = BUNDLE(
+        coll,
+        name='AutoLineDigitizer.app',
+        icon=None,
+        bundle_identifier='com.lineformer.autolinedigitizer',
+    )

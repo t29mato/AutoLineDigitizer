@@ -7,13 +7,13 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g., v1.0.0)'
+        description: 'Version tag (e.g., v0.2.0). Leave empty for artifact-only build.'
         required: false
         default: ''
 
 jobs:
   build-macos:
-    runs-on: macos-13
+    runs-on: macos-15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -36,59 +36,77 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pyinstaller
-          pip install flet
+          pip install pyinstaller flet
           pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-          pip install mmcv==2.1.0 -f https://download.openmmlab.com/mmcv/dist/cpu/torch2.1/index.html
-          pip install opencv-python-headless numpy scipy scikit-image bresenham
-          pip install easyocr
-          pip install Pillow
-
-      - name: Download EasyOCR models
-        run: |
-          mkdir -p ~/.EasyOCR/model
-          python -c "import easyocr; reader = easyocr.Reader(['en'], gpu=False)"
-          ls -la ~/.EasyOCR/model/
-
-      - name: Download model weights from release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          mkdir -p models
-
-          # Download LineFormer model
-          echo "Downloading LineFormer model..."
-          gh release download models --pattern "iter_3000.pth" --dir models || {
-            echo "Model not found in 'models' release. Please upload models first."
-            echo "Run: gh release create models models/iter_3000.pth models/checkpoint.pth --title 'Model Weights' --notes 'Model weights for AutoLineDigitizer'"
-            exit 1
-          }
-
-          # Download ChartDete model
-          echo "Downloading ChartDete model..."
-          gh release download models --pattern "checkpoint.pth" --dir models || {
-            echo "ChartDete model not found"
-            exit 1
-          }
-
-          ls -la models/
+          pip install openmim
+          mim install mmcv==2.1.0
+          pip install opencv-python-headless numpy scipy scikit-image bresenham easyocr Pillow
 
       - name: Build macOS app
-        run: |
-          pyinstaller AutoLineDigitizer.spec --noconfirm
+        run: pyinstaller AutoLineDigitizer.spec --noconfirm
 
       - name: Create ZIP archive
         run: |
           cd dist
           zip -r AutoLineDigitizer-macOS.zip AutoLineDigitizer.app
-          ls -la
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: AutoLineDigitizer-macOS
           path: dist/AutoLineDigitizer-macOS.zip
+          retention-days: 7
 
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\pip\Cache
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller flet
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          pip install openmim
+          mim install mmcv==2.1.0
+          pip install opencv-python-headless numpy scipy scikit-image bresenham easyocr Pillow
+
+      - name: Build Windows app
+        run: pyinstaller AutoLineDigitizer.spec --noconfirm
+
+      - name: Create ZIP archive
+        run: Compress-Archive -Path dist\AutoLineDigitizer -DestinationPath dist\AutoLineDigitizer-Windows.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AutoLineDigitizer-Windows
+          path: dist/AutoLineDigitizer-Windows.zip
+          retention-days: 7
+
+  release:
+    needs: [build-macos, build-windows]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.version != ''
+    permissions:
+      contents: write
+    steps:
       - name: Get version
         id: get_version
         run: |
@@ -96,33 +114,48 @@ jobs:
             echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
           elif [[ "$GITHUB_REF" == refs/tags/* ]]; then
             echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          else
-            echo "version=dev-$(date +%Y%m%d-%H%M%S)" >> $GITHUB_OUTPUT
           fi
 
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: AutoLineDigitizer-macOS
+          path: artifacts/
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: AutoLineDigitizer-Windows
+          path: artifacts/
+
       - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.version != ''
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.get_version.outputs.version }}
           name: Release ${{ steps.get_version.outputs.version }}
           draft: false
           prerelease: false
           files: |
-            dist/AutoLineDigitizer-macOS.zip
+            artifacts/AutoLineDigitizer-macOS.zip
+            artifacts/AutoLineDigitizer-Windows.zip
           body: |
             ## AutoLineDigitizer ${{ steps.get_version.outputs.version }}
 
             ### Download
-            - **macOS**: `AutoLineDigitizer-macOS.zip`
+            - **macOS** (Apple Silicon): `AutoLineDigitizer-macOS.zip`
+            - **Windows**: `AutoLineDigitizer-Windows.zip`
 
-            ### Installation (macOS)
+            ### Installation
+
+            #### macOS
             1. Download and unzip `AutoLineDigitizer-macOS.zip`
-            2. Move `AutoLineDigitizer.app` to Applications folder
-            3. Right-click the app and select "Open" (required for first launch)
-            4. Click "Open" in the security dialog
+            2. Move `AutoLineDigitizer.app` to Applications
+            3. Right-click > "Open" (required for first launch)
+            4. Models will be downloaded automatically on first launch
 
-            ### Requirements
-            - macOS 11.0 (Big Sur) or later
+            #### Windows
+            1. Download and unzip `AutoLineDigitizer-Windows.zip`
+            2. Run `AutoLineDigitizer\AutoLineDigitizer.exe`
+            3. Models will be downloaded automatically on first launch
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
