@@ -36,6 +36,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install "setuptools<71"
           pip install pyinstaller flet
           pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
           pip install openmim
@@ -81,6 +82,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install "setuptools<71"
           pip install pyinstaller flet
           pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
           pip install openmim
