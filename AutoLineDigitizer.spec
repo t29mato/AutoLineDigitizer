@@ -51,6 +51,7 @@ a = Analysis(
         'skimage',
         'scipy',
         'bresenham',
+        'terminaltables',
     ] + distutils_imports + mmcv_imports,
     hookspath=[],
     hooksconfig={},

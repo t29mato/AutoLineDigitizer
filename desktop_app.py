@@ -520,7 +520,7 @@ def main(page: ft.Page):
     result_image = ft.Image(visible=False, fit=ft.ImageFit.CONTAIN, height=400)
 
     info_text = ft.Text("", size=14)
-    axis_info_text = ft.Text("", size=12, color=ft.Colors.GREY_700)
+    axis_info_text = ft.Text("", size=12, color=ft.colors.GREY_700)
 
     # Axis detection status text (no checkbox - always on when available)
     axis_status_text = ft.Text("", size=12)
@@ -690,7 +690,7 @@ def main(page: ft.Page):
     # Buttons
     upload_btn = ft.ElevatedButton(
         "Open Image",
-        icon=ft.Icons.FOLDER_OPEN,
+        icon=ft.icons.FOLDER_OPEN,
         on_click=lambda _: file_picker.pick_files(
             allowed_extensions=["png", "jpg", "jpeg", "bmp", "tiff"]
         ),
@@ -698,7 +698,7 @@ def main(page: ft.Page):
 
     export_sd_btn = ft.ElevatedButton(
         "Export StarryDigitizer (.zip)",
-        icon=ft.Icons.DOWNLOAD,
+        icon=ft.icons.DOWNLOAD,
         disabled=True,
         on_click=lambda _: save_sd_picker.save_file(
             file_name=f"sd-{datetime.now().strftime('%Y%m%d-%H%M%S')}.zip",
@@ -708,7 +708,7 @@ def main(page: ft.Page):
 
     export_wpd_btn = ft.ElevatedButton(
         "Export WebPlotDigitizer (.tar)",
-        icon=ft.Icons.DOWNLOAD,
+        icon=ft.icons.DOWNLOAD,
         disabled=True,
         on_click=lambda _: save_wpd_picker.save_file(
             file_name=f"wpd-{datetime.now().strftime('%Y%m%d-%H%M%S')}.tar",
@@ -718,7 +718,7 @@ def main(page: ft.Page):
 
     export_viz_btn = ft.ElevatedButton(
         "Export Visualization (.png)",
-        icon=ft.Icons.IMAGE,
+        icon=ft.icons.IMAGE,
         disabled=True,
         on_click=lambda _: save_viz_picker.save_file(
             file_name=f"result-{datetime.now().strftime('%Y%m%d-%H%M%S')}.png",
@@ -744,7 +744,7 @@ def main(page: ft.Page):
         ], spacing=10),
         width=250,
         padding=10,
-        bgcolor=ft.Colors.GREY_100,
+        bgcolor=ft.colors.GREY_100,
         border_radius=10,
     )
 
@@ -823,18 +823,18 @@ def main(page: ft.Page):
             if not CHARTDETE_AVAILABLE:
                 app.auto_axis = False
                 axis_status_text.value = "Axis detection: Not available"
-                axis_status_text.color = ft.Colors.ORANGE_700
+                axis_status_text.color = ft.colors.ORANGE_700
             else:
                 status_text.value = "Loading ChartDete..."
                 page.update()
                 try:
                     app.load_chartdete_model()
                     axis_status_text.value = "Axis detection: Ready"
-                    axis_status_text.color = ft.Colors.GREEN_700
+                    axis_status_text.color = ft.colors.GREEN_700
                 except Exception as e:
                     app.auto_axis = False
                     axis_status_text.value = f"Axis detection: Failed ({str(e)[:30]})"
-                    axis_status_text.color = ft.Colors.RED_700
+                    axis_status_text.color = ft.colors.RED_700
 
             status_text.value = "Models loaded. Open an image to start."
             progress_ring.visible = False

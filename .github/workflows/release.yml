@@ -41,7 +41,7 @@ jobs:
           pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
           pip install numpy Pillow
           CC=clang CXX=clang++ CFLAGS='-stdlib=libc++' MMCV_WITH_OPS=1 pip install mmcv-full==1.7.2 --no-build-isolation
-          pip install opencv-python-headless scipy scikit-image bresenham easyocr
+          pip install opencv-python-headless scipy scikit-image bresenham easyocr terminaltables
 
       - name: Build macOS app
         run: pyinstaller AutoLineDigitizer.spec --noconfirm
@@ -87,7 +87,7 @@ jobs:
           pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
           pip install numpy Pillow
           pip install mmcv-full==1.7.2 --no-build-isolation
-          pip install opencv-python-headless scipy scikit-image bresenham easyocr
+          pip install opencv-python-headless scipy scikit-image bresenham easyocr terminaltables
         env:
           MMCV_WITH_OPS: '1'
 
