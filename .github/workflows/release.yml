@@ -39,8 +39,7 @@ jobs:
           pip install "setuptools<71"
           pip install pyinstaller flet
           pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-          pip install openmim
-          mim install mmcv==2.1.0
+          pip install mmcv==2.1.0 --no-build-isolation
           pip install opencv-python-headless numpy scipy scikit-image bresenham easyocr Pillow
 
       - name: Build macOS app
@@ -85,8 +84,7 @@ jobs:
           pip install "setuptools<71"
           pip install pyinstaller flet
           pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-          pip install openmim
-          mim install mmcv==2.1.0
+          pip install mmcv==2.1.0 --no-build-isolation
           pip install opencv-python-headless numpy scipy scikit-image bresenham easyocr Pillow
 
       - name: Build Windows app
