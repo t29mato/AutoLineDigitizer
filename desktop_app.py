@@ -140,7 +140,6 @@ class LineFormerApp:
         self.downsample_mode = "max_points"
         self.fixed_step = 10
         self.max_points = 50
-        self.show_visualization = True
         self.auto_axis = True
 
     def load_lineformer_model(self):
@@ -539,7 +538,7 @@ def main(page: ft.Page):
         value="original",
         width=200,
         options=[
-            ft.dropdown.Option("original", "Original (Detection Order)"),
+            ft.dropdown.Option("original", "Detection Order"),
             ft.dropdown.Option("mean_y_desc", "Mean Y (High → Low)"),
             ft.dropdown.Option("mean_y_asc", "Mean Y (Low → High)"),
         ],
@@ -566,8 +565,6 @@ def main(page: ft.Page):
         label="Step: {value}", width=200, visible=False,
     )
 
-    show_viz_checkbox = ft.Checkbox(label="Show visualization", value=True)
-
     def on_downsample_change(e):
         app.downsample_mode = downsample_dropdown.value
         max_points_slider.visible = downsample_dropdown.value == "max_points"
@@ -585,16 +582,10 @@ def main(page: ft.Page):
     def on_fixed_step_change(e):
         app.fixed_step = int(fixed_step_slider.value)
 
-    def on_viz_change(e):
-        app.show_visualization = show_viz_checkbox.value
-        result_image.visible = app.show_visualization and app.result_image is not None
-        page.update()
-
     sort_dropdown.on_change = on_sort_change
     downsample_dropdown.on_change = on_downsample_change
     max_points_slider.on_change = on_max_points_change
     fixed_step_slider.on_change = on_fixed_step_change
-    show_viz_checkbox.on_change = on_viz_change
 
     # Forward declarations for buttons
     export_sd_btn = None
@@ -625,10 +616,9 @@ def main(page: ft.Page):
                 app.axis_config, app.ocr_results = app.detect_axis_calibration(app.current_image)
 
             # Step 3: Draw visualization
-            if app.show_visualization:
-                app.result_image = app.draw_points_on_image(app.current_image, app.data_series, app.axis_config)
-                result_image.src_base64 = image_to_base64(cv2.cvtColor(app.result_image, cv2.COLOR_BGR2RGB))
-                result_image.visible = True
+            app.result_image = app.draw_points_on_image(app.current_image, app.data_series, app.axis_config)
+            result_image.src_base64 = image_to_base64(cv2.cvtColor(app.result_image, cv2.COLOR_BGR2RGB))
+            result_image.visible = True
 
             # Update info
             total_points = sum(len(s['points']) for s in app.data_series)
@@ -649,7 +639,7 @@ def main(page: ft.Page):
             # Enable export buttons
             export_sd_btn.disabled = False
             export_wpd_btn.disabled = False
-            export_viz_btn.disabled = not app.show_visualization
+            export_viz_btn.disabled = False
 
         except Exception as e:
             status_text.value = f"Error: {e}"
@@ -749,15 +739,11 @@ def main(page: ft.Page):
         content=ft.Column([
             ft.Text("Settings", size=18, weight=ft.FontWeight.BOLD),
             ft.Divider(),
-            axis_status_text,
-            ft.Divider(),
             sort_dropdown,
             ft.Divider(),
             downsample_dropdown,
             max_points_slider,
             fixed_step_slider,
-            ft.Divider(),
-            show_viz_checkbox,
             ft.Divider(),
             ft.Text("Export", size=16, weight=ft.FontWeight.BOLD),
             export_sd_btn,
@@ -775,6 +761,7 @@ def main(page: ft.Page):
             upload_btn,
             progress_ring,
             status_text,
+            axis_status_text,
         ], alignment=ft.MainAxisAlignment.START),
         ft.Divider(),
         ft.Row([
