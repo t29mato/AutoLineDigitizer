@@ -36,11 +36,12 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install "setuptools<71" wheel
+          pip install "setuptools<71" wheel pyyaml addict yapf
           pip install pyinstaller "flet==0.24.1"
           pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-          CC=clang CXX=clang++ CFLAGS='-stdlib=libc++' MMCV_WITH_OPS=1 pip install mmcv-full==1.7.2
-          pip install opencv-python-headless numpy scipy scikit-image bresenham easyocr Pillow
+          pip install numpy Pillow
+          CC=clang CXX=clang++ CFLAGS='-stdlib=libc++' MMCV_WITH_OPS=1 pip install mmcv-full==1.7.2 --no-build-isolation
+          pip install opencv-python-headless scipy scikit-image bresenham easyocr
 
       - name: Build macOS app
         run: pyinstaller AutoLineDigitizer.spec --noconfirm
@@ -81,11 +82,12 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install "setuptools<71" wheel
+          pip install "setuptools<71" wheel pyyaml addict yapf
           pip install pyinstaller "flet==0.24.1"
           pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-          pip install mmcv-full==1.7.2
-          pip install opencv-python-headless numpy scipy scikit-image bresenham easyocr Pillow
+          pip install numpy Pillow
+          pip install mmcv-full==1.7.2 --no-build-isolation
+          pip install opencv-python-headless scipy scikit-image bresenham easyocr
         env:
           MMCV_WITH_OPS: '1'
 
