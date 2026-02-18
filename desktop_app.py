@@ -32,19 +32,11 @@ sys.path.insert(0, LINEFORMER_DIR)
 sys.path.insert(0, CHARTDETE_DIR)  # Highest priority - inserted last
 
 # Try to import ChartDete's mmdet and register custom models
-# ChartDete's mmdet checks for mmcv 1.x, but we use mmcv 2.x with patched ops
-# Temporarily patch mmcv.__version__ to bypass the version check
 CHARTDETE_AVAILABLE = False
 try:
-    import mmcv
-    _real_mmcv_version = mmcv.__version__
-    mmcv.__version__ = '1.7.2'  # Pretend to be mmcv 1.x for ChartDete's version check
-    try:
-        import mmdet  # noqa: F401
-        from mmdet.models.roi_heads.cascade_roi_head_LGF import CascadeRoIHead_LGF  # noqa: F401
-        CHARTDETE_AVAILABLE = True
-    finally:
-        mmcv.__version__ = _real_mmcv_version  # Restore real version
+    import mmdet  # noqa: F401
+    from mmdet.models.roi_heads.cascade_roi_head_LGF import CascadeRoIHead_LGF  # noqa: F401
+    CHARTDETE_AVAILABLE = True
 except Exception as e:
     print(f"ChartDete custom models not available: {e}")
 

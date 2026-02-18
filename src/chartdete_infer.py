@@ -25,7 +25,11 @@ _ocr_reader = None
 
 
 def _patch_mmcv_ops():
-    """Patch mmcv ops to use torchvision for CPU."""
+    """Patch mmcv ops to use torchvision for CPU.
+
+    Works with both mmcv-full (has C++ extensions) and mmcv lite (pure Python).
+    When C++ extensions are not available, directly replaces ops with torchvision.
+    """
     import mmcv.ops
     import mmcv.ops.nms as mmcv_nms_module
 
@@ -104,34 +108,19 @@ def _patch_mmcv_ops():
             aligned=aligned
         )
 
-    # Patch roi_align function
-    original_roi_align = mmcv.ops.roi_align
-
-    def wrapped_roi_align(input, rois, output_size, spatial_scale=1.0,
-                          sampling_ratio=-1, pool_mode='avg', aligned=True):
-        try:
-            return original_roi_align(input, rois, output_size, spatial_scale,
-                                     sampling_ratio, pool_mode, aligned)
-        except NotImplementedError:
-            return patched_roi_align(input, rois, output_size, spatial_scale,
-                                    sampling_ratio, pool_mode, aligned)
-
-    mmcv.ops.roi_align = wrapped_roi_align
+    # Directly replace roi_align with torchvision version
+    mmcv.ops.roi_align = patched_roi_align
 
     # Patch RoIAlign class forward method
     from mmcv.ops import RoIAlign
-    original_roialign_forward = RoIAlign.forward
 
     def patched_roialign_forward(self, input, rois):
-        try:
-            return original_roialign_forward(self, input, rois)
-        except NotImplementedError:
-            return tv_ops.roi_align(
-                input, rois, self.output_size,
-                spatial_scale=self.spatial_scale,
-                sampling_ratio=self.sampling_ratio if self.sampling_ratio > 0 else 2,
-                aligned=self.aligned
-            )
+        return tv_ops.roi_align(
+            input, rois, self.output_size,
+            spatial_scale=self.spatial_scale,
+            sampling_ratio=self.sampling_ratio if self.sampling_ratio > 0 else 2,
+            aligned=self.aligned
+        )
 
     RoIAlign.forward = patched_roialign_forward
 

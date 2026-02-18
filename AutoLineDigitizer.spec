@@ -9,6 +9,9 @@ spec_dir = os.path.dirname(os.path.abspath(SPEC))
 # Collect all distutils submodules (including setuptools._distutils)
 distutils_imports = collect_submodules('distutils') + collect_submodules('setuptools._distutils')
 
+# Collect all mmcv submodules to ensure runner, parallel, cnn, etc. are included
+mmcv_imports = collect_submodules('mmcv')
+
 a = Analysis(
     ['desktop_app.py'],
     pathex=[
@@ -39,8 +42,6 @@ a = Analysis(
         'mmdet.models',
         'mmdet.models.roi_heads',
         'mmdet.models.roi_heads.cascade_roi_head_LGF',
-        'mmcv',
-        'mmcv.ops',
         'torch',
         'torchvision',
         'cv2',
@@ -50,7 +51,7 @@ a = Analysis(
         'skimage',
         'scipy',
         'bresenham',
-    ] + distutils_imports,
+    ] + distutils_imports + mmcv_imports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

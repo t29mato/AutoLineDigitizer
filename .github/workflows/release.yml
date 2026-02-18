@@ -23,7 +23,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.10'
 
       - name: Cache pip packages
         uses: actions/cache@v4
@@ -37,9 +37,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install "setuptools<71" wheel
-          pip install pyinstaller flet
+          pip install pyinstaller "flet==0.24.1"
           pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-          pip install mmcv==2.1.0 --no-build-isolation
+          CC=clang CXX=clang++ CFLAGS='-stdlib=libc++' MMCV_WITH_OPS=1 pip install mmcv-full==1.7.2
           pip install opencv-python-headless numpy scipy scikit-image bresenham easyocr Pillow
 
       - name: Build macOS app
@@ -68,7 +68,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.10'
 
       - name: Cache pip packages
         uses: actions/cache@v4
@@ -82,10 +82,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install "setuptools<71" wheel
-          pip install pyinstaller flet
+          pip install pyinstaller "flet==0.24.1"
           pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-          pip install mmcv==2.1.0 --no-build-isolation
+          pip install mmcv-full==1.7.2
           pip install opencv-python-headless numpy scipy scikit-image bresenham easyocr Pillow
+        env:
+          MMCV_WITH_OPS: '1'
 
       - name: Build Windows app
         run: pyinstaller AutoLineDigitizer.spec --noconfirm
