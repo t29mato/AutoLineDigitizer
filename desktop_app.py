@@ -126,12 +126,13 @@ class LineFormerApp:
         self.result_image = None
         self.axis_config = None
         self.ocr_results = None
+        self.raw_lines = None  # Cached raw points from model inference
 
         # Settings
         self.sort_mode = "mean_y_desc"
         self.downsample_mode = "max_points"
         self.fixed_step = 10
-        self.max_points = 50
+        self.max_points = 20
         self.auto_axis = True
 
     def load_lineformer_model(self):
@@ -237,15 +238,24 @@ class LineFormerApp:
         return data_series
 
     def extract_lines(self, img):
-        """Extract line data from image."""
+        """Extract line data from image using model inference."""
         line_dataseries = self.infer_module.get_dataseries(img, to_clean=False)
 
-        data_series = []
+        self.raw_lines = []
         for line in line_dataseries:
             if len(line) == 0:
                 continue
+            self.raw_lines.append([[int(pt['x']), int(pt['y'])] for pt in line])
 
-            all_points = [[int(pt['x']), int(pt['y'])] for pt in line]
+        return self.apply_downsample_and_sort()
+
+    def apply_downsample_and_sort(self):
+        """Apply downsampling and sorting to cached raw line data."""
+        if self.raw_lines is None:
+            return []
+
+        data_series = []
+        for all_points in self.raw_lines:
             points = self.downsample_points(all_points)
             data_series.append({"points": points})
 
@@ -547,9 +557,9 @@ def main(page: ft.Page):
         ],
     )
 
-    max_points_label = ft.Text("Max points: 50", size=12)
+    max_points_label = ft.Text("Max points: 20", size=12)
     max_points_slider = ft.Slider(
-        min=10, max=200, value=50, divisions=19,
+        min=10, max=100, value=20, divisions=9,
         label="{value}", width=200,
     )
 
@@ -560,10 +570,10 @@ def main(page: ft.Page):
     )
 
     def reprocess_lines():
-        """Re-extract lines using current downsample settings (skip axis detection)."""
-        if app.current_image is None or app.infer_module is None:
+        """Re-apply downsampling/sorting to cached line data (no re-inference)."""
+        if app.current_image is None or app.raw_lines is None:
             return
-        app.data_series = app.extract_lines(app.current_image)
+        app.data_series = app.apply_downsample_and_sort()
         app.result_image = app.draw_points_on_image(app.current_image, app.data_series, app.axis_config)
         result_image.src_base64 = image_to_base64(cv2.cvtColor(app.result_image, cv2.COLOR_BGR2RGB))
         result_image.visible = True
@@ -765,7 +775,7 @@ def main(page: ft.Page):
             export_sd_btn,
             ft.TextButton(
                 "Open StarryDigitizer",
-                url="https://starry-digitizer.vercel.app/",
+                url="https://starrydigitizer.vercel.app/",
                 icon=ft.icons.OPEN_IN_NEW,
             ),
             export_wpd_btn,
