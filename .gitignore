@@ -167,3 +167,6 @@ models/*.pt
 # Local test/data files (not for distribution)
 test_image/
 test_output/
+
+# Claude Code local settings
+.claude/settings.local.json
