@@ -738,8 +738,8 @@ def main(page: ft.Page):
         ),
     )
 
-    export_sd_btn = ft.ElevatedButton(
-        "Export StarryDigitizer (.zip)",
+    export_sd_btn = ft.OutlinedButton(
+        "Export .zip",
         icon=ft.icons.DOWNLOAD,
         disabled=True,
         on_click=lambda _: save_sd_picker.save_file(
@@ -748,8 +748,8 @@ def main(page: ft.Page):
         ),
     )
 
-    export_wpd_btn = ft.ElevatedButton(
-        "Export WebPlotDigitizer (.tar)",
+    export_wpd_btn = ft.OutlinedButton(
+        "Export .tar",
         icon=ft.icons.DOWNLOAD,
         disabled=True,
         on_click=lambda _: save_wpd_picker.save_file(
@@ -771,19 +771,23 @@ def main(page: ft.Page):
             fixed_step_label,
             fixed_step_slider,
             ft.Divider(),
-            ft.Text("Export", size=16, weight=ft.FontWeight.BOLD),
-            export_sd_btn,
-            ft.TextButton(
-                "Open StarryDigitizer",
-                url="https://starrydigitizer.vercel.app/",
-                icon=ft.icons.OPEN_IN_NEW,
-            ),
-            export_wpd_btn,
-            ft.TextButton(
-                "Open WebPlotDigitizer",
-                url="https://apps.automeris.io/wpd/",
-                icon=ft.icons.OPEN_IN_NEW,
-            ),
+            ft.Text("Adjust in Digitizer", size=14, weight=ft.FontWeight.BOLD),
+            ft.Text("StarryDigitizer", size=13, weight=ft.FontWeight.W_500),
+            ft.Row([
+                export_sd_btn,
+                ft.IconButton(
+                    icon=ft.icons.OPEN_IN_NEW, tooltip="Open StarryDigitizer",
+                    url="https://starrydigitizer.vercel.app/",
+                ),
+            ], spacing=0),
+            ft.Text("WebPlotDigitizer", size=13, weight=ft.FontWeight.W_500),
+            ft.Row([
+                export_wpd_btn,
+                ft.IconButton(
+                    icon=ft.icons.OPEN_IN_NEW, tooltip="Open WebPlotDigitizer",
+                    url="https://apps.automeris.io/wpd/",
+                ),
+            ], spacing=0),
         ], spacing=10),
         width=250,
         padding=10,
