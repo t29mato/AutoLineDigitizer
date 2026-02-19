@@ -52,6 +52,8 @@ a = Analysis(
         'scipy',
         'bresenham',
         'terminaltables',
+        'matplotlib',
+        'pycocotools',
     ] + distutils_imports + mmcv_imports,
     hookspath=[],
     hooksconfig={},
