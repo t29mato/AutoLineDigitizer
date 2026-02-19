@@ -128,7 +128,7 @@ class LineFormerApp:
         self.ocr_results = None
 
         # Settings
-        self.sort_mode = "original"
+        self.sort_mode = "mean_y_desc"
         self.downsample_mode = "max_points"
         self.fixed_step = 10
         self.max_points = 50
@@ -527,7 +527,7 @@ def main(page: ft.Page):
 
     sort_dropdown = ft.Dropdown(
         label="Sort Lines",
-        value="original",
+        value="mean_y_desc",
         width=200,
         options=[
             ft.dropdown.Option("original", "Detection Order"),
@@ -547,32 +547,55 @@ def main(page: ft.Page):
         ],
     )
 
+    max_points_label = ft.Text("Max points: 50", size=12)
     max_points_slider = ft.Slider(
         min=10, max=200, value=50, divisions=19,
-        label="Max points: {value}", width=200,
+        label="{value}", width=200,
     )
 
+    fixed_step_label = ft.Text("Step: 10", size=12, visible=False)
     fixed_step_slider = ft.Slider(
         min=1, max=50, value=10, divisions=49,
-        label="Step: {value}", width=200, visible=False,
+        label="{value}", width=200, visible=False,
     )
+
+    def reprocess_lines():
+        """Re-extract lines using current downsample settings (skip axis detection)."""
+        if app.current_image is None or app.infer_module is None:
+            return
+        app.data_series = app.extract_lines(app.current_image)
+        app.result_image = app.draw_points_on_image(app.current_image, app.data_series, app.axis_config)
+        result_image.src_base64 = image_to_base64(cv2.cvtColor(app.result_image, cv2.COLOR_BGR2RGB))
+        result_image.visible = True
+        total_points = sum(len(s['points']) for s in app.data_series)
+        line_pts = [len(s['points']) for s in app.data_series]
+        info_text.value = f"{len(app.data_series)} lines detected ({total_points} points)\nPoints per line: {', '.join(map(str, line_pts))}"
+        page.update()
 
     def on_downsample_change(e):
         app.downsample_mode = downsample_dropdown.value
+        max_points_label.visible = downsample_dropdown.value == "max_points"
         max_points_slider.visible = downsample_dropdown.value == "max_points"
+        fixed_step_label.visible = downsample_dropdown.value == "fixed"
         fixed_step_slider.visible = downsample_dropdown.value == "fixed"
         page.update()
+        reprocess_lines()
 
     def on_sort_change(e):
         app.sort_mode = sort_dropdown.value
-        if app.current_image is not None and app.data_series is not None:
-            process_image()
+        reprocess_lines()
 
     def on_max_points_change(e):
         app.max_points = int(max_points_slider.value)
+        max_points_label.value = f"Max points: {int(max_points_slider.value)}"
+        page.update()
+        reprocess_lines()
 
     def on_fixed_step_change(e):
         app.fixed_step = int(fixed_step_slider.value)
+        fixed_step_label.value = f"Step: {int(fixed_step_slider.value)}"
+        page.update()
+        reprocess_lines()
 
     sort_dropdown.on_change = on_sort_change
     downsample_dropdown.on_change = on_downsample_change
@@ -582,11 +605,10 @@ def main(page: ft.Page):
     # Forward declarations for buttons
     export_sd_btn = None
     export_wpd_btn = None
-    export_viz_btn = None
 
     def process_image():
         """Process current image and update display."""
-        nonlocal export_sd_btn, export_wpd_btn, export_viz_btn
+        nonlocal export_sd_btn, export_wpd_btn
 
         if app.current_image is None or app.infer_module is None:
             return
@@ -631,7 +653,6 @@ def main(page: ft.Page):
             # Enable export buttons
             export_sd_btn.disabled = False
             export_wpd_btn.disabled = False
-            export_viz_btn.disabled = False
 
         except Exception as e:
             status_text.value = f"Error: {e}"
@@ -639,20 +660,38 @@ def main(page: ft.Page):
 
         page.update()
 
+    def load_image(img, image_path=None):
+        """Load an image into the app and trigger processing."""
+        app.current_image = img
+        app.current_image_path = image_path
+        input_image.src_base64 = image_to_base64(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+        input_image.visible = True
+        page.update()
+        page.run_thread(process_image)
+
     def pick_files_result(e: ft.FilePickerResultEvent):
         if e.files and len(e.files) > 0:
             file_path = e.files[0].path
-            app.current_image_path = file_path
-            app.current_image = cv2.imread(file_path)
+            img = cv2.imread(file_path)
 
-            if app.current_image is not None:
-                input_image.src_base64 = image_to_base64(cv2.cvtColor(app.current_image, cv2.COLOR_BGR2RGB))
-                input_image.visible = True
-                page.update()
-                process_image()
+            if img is not None:
+                load_image(img, file_path)
             else:
                 status_text.value = "Failed to read image"
                 page.update()
+
+    def on_keyboard(e: ft.KeyboardEvent):
+        if e.key == "V" and (e.meta or e.ctrl):
+            try:
+                from PIL import ImageGrab
+                pil_img = ImageGrab.grabclipboard()
+                if pil_img is not None:
+                    img = cv2.cvtColor(np.array(pil_img.convert("RGB")), cv2.COLOR_RGB2BGR)
+                    load_image(img)
+            except Exception:
+                pass
+
+    page.on_keyboard_event = on_keyboard
 
     file_picker = ft.FilePicker(on_result=pick_files_result)
     page.overlay.append(file_picker)
@@ -676,16 +715,9 @@ def main(page: ft.Page):
             status_text.value = f"Saved: {e.path}"
             page.update()
 
-    def save_viz_result(e: ft.FilePickerResultEvent):
-        if e.path and app.result_image is not None:
-            cv2.imwrite(e.path, app.result_image)
-            status_text.value = f"Saved: {e.path}"
-            page.update()
-
     save_sd_picker = ft.FilePicker(on_result=save_sd_result)
     save_wpd_picker = ft.FilePicker(on_result=save_wpd_result)
-    save_viz_picker = ft.FilePicker(on_result=save_viz_result)
-    page.overlay.extend([save_sd_picker, save_wpd_picker, save_viz_picker])
+    page.overlay.extend([save_sd_picker, save_wpd_picker])
 
     # Buttons
     upload_btn = ft.ElevatedButton(
@@ -716,16 +748,6 @@ def main(page: ft.Page):
         ),
     )
 
-    export_viz_btn = ft.ElevatedButton(
-        "Export Visualization (.png)",
-        icon=ft.icons.IMAGE,
-        disabled=True,
-        on_click=lambda _: save_viz_picker.save_file(
-            file_name=f"result-{datetime.now().strftime('%Y%m%d-%H%M%S')}.png",
-            allowed_extensions=["png"]
-        ),
-    )
-
     # Layout
     settings_panel = ft.Container(
         content=ft.Column([
@@ -734,13 +756,24 @@ def main(page: ft.Page):
             sort_dropdown,
             ft.Divider(),
             downsample_dropdown,
+            max_points_label,
             max_points_slider,
+            fixed_step_label,
             fixed_step_slider,
             ft.Divider(),
             ft.Text("Export", size=16, weight=ft.FontWeight.BOLD),
             export_sd_btn,
+            ft.TextButton(
+                "Open StarryDigitizer",
+                url="https://starry-digitizer.vercel.app/",
+                icon=ft.icons.OPEN_IN_NEW,
+            ),
             export_wpd_btn,
-            export_viz_btn,
+            ft.TextButton(
+                "Open WebPlotDigitizer",
+                url="https://apps.automeris.io/wpd/",
+                icon=ft.icons.OPEN_IN_NEW,
+            ),
         ], spacing=10),
         width=250,
         padding=10,
