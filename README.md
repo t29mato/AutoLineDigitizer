@@ -1,6 +1,6 @@
 # AutoLineDigitizer
 
-A Streamlit web application for automatic line chart data extraction using [LineFormer](https://github.com/TheJaeLal/LineFormer) with automatic axis detection via [ChartDete](https://github.com/pengyu965/ChartDete/) and [EasyOCR](https://github.com/JaidedAI/EasyOCR).
+A desktop application for automatic line chart data extraction using [LineFormer](https://github.com/TheJaeLal/LineFormer) with automatic axis detection via [ChartDete](https://github.com/pengyu965/ChartDete/) and [EasyOCR](https://github.com/JaidedAI/EasyOCR).
 
 ## Demo
 
@@ -28,58 +28,34 @@ https://github.com/user-attachments/assets/7ecb641e-f939-40a5-ad7b-54b64937fdd4
   - [StarryDigitizer](https://starrydigitizer.vercel.app/) ZIP
   - [WebPlotDigitizer](https://apps.automeris.io/wpd4/) TAR
 
-## Project Structure
+## Download
 
-```
-LineFormer/
-├── src/                    # Source code
-│   ├── app.py              # Streamlit application
-│   └── chartdete_infer.py  # ChartDete inference wrapper
-├── config/                 # Configuration files
-│   └── chartdete_config.py # ChartDete model config
-├── models/                 # Model weights (not in git)
-│   ├── iter_3000.pth       # LineFormer model
-│   └── checkpoint.pth      # ChartDete model
-├── submodules/             # Git submodules
-│   ├── lineformer/         # LineFormer repository
-│   └── chartdete/          # ChartDete repository
-├── demo/                   # Demo images
-├── requirements.txt        # Python dependencies
-├── LICENSE
-└── README.md
-```
+Download the latest version from the [Releases](https://github.com/t29mato/AutoLineDigitizer/releases) page.
 
-## Quick Start
+| Platform | File |
+|----------|------|
+| macOS (Apple Silicon) | `AutoLineDigitizer-macOS.zip` |
+| Windows | `AutoLineDigitizer-Windows.zip` |
 
-```bash
-# Clone with submodules
-git clone --recursive https://github.com/YOUR_USERNAME/LineFormer.git
-cd LineFormer
+> **Note:** Intel Mac is not currently supported. Apple Silicon (M1/M2/M3/M4) only.
 
-# Or if already cloned, initialize submodules
-git submodule update --init --recursive
+### Installation
 
-# Install dependencies
-pip install -r requirements.txt
+#### macOS
 
-# Download models (see Model Weights section below)
+1. Download and unzip `AutoLineDigitizer-macOS.zip`
+2. Move `AutoLineDigitizer.app` to Applications
+3. On first launch, macOS will show a warning: **"AutoLineDigitizer.app cannot be opened because the developer cannot be verified."**
+   - Click **Cancel** (not "Move to Trash")
+   - Go to **System Settings → Privacy & Security** → scroll down and click **"Open Anyway"**
+   - Or: **Right-click** the app → **Open** → click **Open** in the dialog
+4. Models will be downloaded automatically on first launch
 
-# Run the app
-streamlit run src/app.py
-```
+#### Windows
 
-### Model Weights
-
-Download the following model weights and place them in the `models/` directory:
-
-| Model | Size | Source |
-|-------|------|--------|
-| LineFormer (`iter_3000.pth`) | 543MB | [LineFormer Repository](https://github.com/TheJaeLal/LineFormer) |
-| ChartDete (`checkpoint.pth`) | 1.4GB | [ChartDete Repository](https://github.com/pengyu965/ChartDete) |
-
-**Download instructions:**
-- **LineFormer**: Go to repository README → "Pretrained Weights" section → Download from Google Drive
-- **ChartDete**: Go to repository README → Download `work_dirs.zip` from Google Drive → Extract `cascade_rcnn_swin-t_fpn_LGF_VCE_PCE_coco_focalsmoothloss/checkpoint.pth`
+1. Download and unzip `AutoLineDigitizer-Windows.zip`
+2. Run `AutoLineDigitizer\AutoLineDigitizer.exe`
+3. Models will be downloaded automatically on first launch
 
 ---
 
