@@ -1,18 +1,16 @@
-# Streamlit App Dependencies
-streamlit>=1.28.0
-
 # Desktop App (Flet)
-flet>=0.21.0
+flet==0.24.1
 opencv-python>=4.8.0
 numpy>=1.24.0
 
 # PyTorch (CPU or CUDA)
+# Install via: pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 torch>=1.13.0
 torchvision>=0.14.0
 
 # MMDetection (for LineFormer and ChartDete)
-mmcv-full>=1.7.0
-mmdet>=2.28.0
+# Install via: MMCV_WITH_OPS=1 pip install mmcv-full==1.7.2 --no-build-isolation
+mmcv-full==1.7.2
 
 # OCR for axis label detection
 easyocr>=1.7.0
@@ -21,4 +19,6 @@ easyocr>=1.7.0
 scikit-image>=0.21.0
 scipy>=1.9.0
 bresenham
-tqdm
+terminaltables
+matplotlib
+pycocotools
