@@ -526,8 +526,8 @@ def main(page: ft.Page):
     status_text = ft.Text("Loading models...", size=14)
     progress_ring = ft.ProgressRing(visible=True, width=20, height=20)
 
-    input_image = ft.Image(visible=False, fit=ft.ImageFit.CONTAIN, height=400)
-    result_image = ft.Image(visible=False, fit=ft.ImageFit.CONTAIN, height=400)
+    input_image = ft.Image(visible=False, fit=ft.ImageFit.FIT_WIDTH)
+    result_image = ft.Image(visible=False, fit=ft.ImageFit.FIT_WIDTH)
 
     info_text = ft.Text("", size=14)
     axis_info_text = ft.Text("", size=12, color=ft.colors.GREY_700)
@@ -807,8 +807,8 @@ def main(page: ft.Page):
             ft.Column([
                 ft.Text("Extracted Points", size=16, weight=ft.FontWeight.BOLD),
                 result_image,
-            ], expand=True, visible=True),
-        ], expand=True),
+            ], expand=True),
+        ], vertical_alignment=ft.CrossAxisAlignment.START),
         info_text,
         axis_info_text,
     ], expand=True)
