@@ -16,12 +16,11 @@ APP_VERSION = "dev"
 if getattr(sys, 'frozen', False):
     # Running as PyInstaller bundle
     SCRIPT_DIR = sys._MEIPASS
-    # Set SSL certificate path for bundled app
-    _ca_file = os.path.join(SCRIPT_DIR, 'certifi', 'cacert.pem')
-    os.environ['SSL_CERT_FILE'] = _ca_file
-    os.environ['REQUESTS_CA_BUNDLE'] = _ca_file
-    # Create a proper SSL context with bundled certificates
-    _ssl_context = ssl.create_default_context(cafile=_ca_file)
+    # Fix SSL certificates for bundled app
+    import certifi
+    os.environ['SSL_CERT_FILE'] = certifi.where()
+    os.environ['REQUESTS_CA_BUNDLE'] = certifi.where()
+    _ssl_context = ssl.create_default_context(cafile=certifi.where())
 else:
     _ssl_context = None
     # Running as normal script
