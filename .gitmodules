@@ -1,6 +1,6 @@
 [submodule "submodules/lineformer"]
 	path = submodules/lineformer
-	url = https://github.com/TheJaeLal/LineFormer.git
+	url = https://github.com/t29mato/LineFormer.git
 [submodule "submodules/chartdete"]
 	path = submodules/chartdete
 	url = https://github.com/pengyu965/ChartDete.git
