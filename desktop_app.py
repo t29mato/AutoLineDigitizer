@@ -17,9 +17,13 @@ if getattr(sys, 'frozen', False):
     # Running as PyInstaller bundle
     SCRIPT_DIR = sys._MEIPASS
     # Set SSL certificate path for bundled app
-    os.environ['SSL_CERT_FILE'] = os.path.join(SCRIPT_DIR, 'certifi', 'cacert.pem')
-    ssl._create_default_https_context = ssl.create_default_context
+    _ca_file = os.path.join(SCRIPT_DIR, 'certifi', 'cacert.pem')
+    os.environ['SSL_CERT_FILE'] = _ca_file
+    os.environ['REQUESTS_CA_BUNDLE'] = _ca_file
+    # Create a proper SSL context with bundled certificates
+    _ssl_context = ssl.create_default_context(cafile=_ca_file)
 else:
+    _ssl_context = None
     # Running as normal script
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -123,7 +127,7 @@ def download_file(url, dest_path, progress_callback=None):
     tmp_path = dest_path + '.tmp'
 
     req = urllib.request.Request(url)
-    with urllib.request.urlopen(req) as response:
+    with urllib.request.urlopen(req, context=_ssl_context) as response:
         total_size = int(response.headers.get('Content-Length', 0))
         downloaded = 0
         block_size = 1024 * 1024  # 1MB
@@ -898,7 +902,6 @@ def main(page: ft.Page):
         padding=10,
         bgcolor=ft.colors.GREY_100,
         border_radius=10,
-        expand=True,
     )
 
     paste_hint = ft.Text("or Cmd+V to paste", size=12, color=ft.colors.GREY_500)
