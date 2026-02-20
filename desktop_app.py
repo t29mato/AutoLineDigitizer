@@ -7,6 +7,7 @@ Automatic axis detection using ChartDete + OCR.
 
 import sys
 import os
+import ssl
 
 APP_VERSION = "dev"
 
@@ -15,6 +16,9 @@ APP_VERSION = "dev"
 if getattr(sys, 'frozen', False):
     # Running as PyInstaller bundle
     SCRIPT_DIR = sys._MEIPASS
+    # Set SSL certificate path for bundled app
+    os.environ['SSL_CERT_FILE'] = os.path.join(SCRIPT_DIR, 'certifi', 'cacert.pem')
+    ssl._create_default_https_context = ssl.create_default_context
 else:
     # Running as normal script
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))

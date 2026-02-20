@@ -1,6 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 import os
 import sys
+import certifi
 from PyInstaller.utils.hooks import collect_submodules, collect_data_files
 
 # Get the directory containing this spec file
@@ -23,6 +24,8 @@ a = Analysis(
     ],
     binaries=[],
     datas=[
+        # SSL certificates for HTTPS downloads
+        (certifi.where(), 'certifi'),
         # Config files
         ('config', 'config'),
         # LineFormer submodule (config files and line_utils)
