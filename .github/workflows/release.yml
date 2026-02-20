@@ -43,6 +43,11 @@ jobs:
           CC=clang CXX=clang++ CFLAGS='-stdlib=libc++' MMCV_WITH_OPS=1 pip install mmcv-full==1.7.2 --no-build-isolation
           pip install opencv-python-headless scipy scikit-image bresenham easyocr terminaltables matplotlib pycocotools
 
+      - name: Embed version
+        run: |
+          VERSION="${GITHUB_REF_NAME:-dev}"
+          sed -i '' "s/APP_VERSION = \"dev\"/APP_VERSION = \"${VERSION#v}\"/" desktop_app.py
+
       - name: Build macOS app
         run: pyinstaller AutoLineDigitizer.spec --noconfirm
 
@@ -90,6 +95,12 @@ jobs:
           pip install opencv-python-headless scipy scikit-image bresenham easyocr terminaltables matplotlib pycocotools
         env:
           MMCV_WITH_OPS: '1'
+
+      - name: Embed version
+        run: |
+          $version = if ($env:GITHUB_REF_NAME) { $env:GITHUB_REF_NAME } else { "dev" }
+          $version = $version -replace '^v', ''
+          (Get-Content desktop_app.py) -replace 'APP_VERSION = "dev"', "APP_VERSION = `"$version`"" | Set-Content desktop_app.py
 
       - name: Build Windows app
         run: pyinstaller AutoLineDigitizer.spec --noconfirm

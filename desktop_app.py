@@ -8,6 +8,8 @@ Automatic axis detection using ChartDete + OCR.
 import sys
 import os
 
+APP_VERSION = "dev"
+
 # Ensure the script's directory is in sys.path for local imports
 # Handle both normal execution and PyInstaller bundled execution
 if getattr(sys, 'frozen', False):
@@ -885,11 +887,14 @@ def main(page: ft.Page):
                     url="https://apps.automeris.io/wpd/",
                 ),
             ], spacing=0),
-        ], spacing=10),
+            ft.Container(expand=True),
+            ft.Text(f"v{APP_VERSION}", size=11, color=ft.colors.GREY_400),
+        ], spacing=10, expand=True),
         width=250,
         padding=10,
         bgcolor=ft.colors.GREY_100,
         border_radius=10,
+        expand=True,
     )
 
     paste_hint = ft.Text("or Cmd+V to paste", size=12, color=ft.colors.GREY_500)
