@@ -62,6 +62,27 @@ MODEL_FILES = {
     "checkpoint.pth": "ChartDete",
 }
 
+# HuggingFace repository for fine-tuned models
+HUGGINGFACE_REPO = "t29mato/lineformer-battery-finetuned"
+
+# LineFormer model variants
+LINEFORMER_MODELS = {
+    "general": {
+        "name": "General",
+        "checkpoint": "iter_3000.pth",
+    },
+    "battery_iter5000": {
+        "name": "Battery (iter_5000)",
+        "checkpoint": "battery_iter_5000.pth",
+        "huggingface_filename": "iter_5000.pth",
+    },
+    "battery_best_segm": {
+        "name": "Battery (best_segm)",
+        "checkpoint": "battery_best_segm_mAP_iter_1300.pth",
+        "huggingface_filename": "best_segm_mAP_iter_1300.pth",
+    },
+}
+
 
 def get_models_dir():
     """Get the models directory path. Uses user data directory for bundled apps."""
@@ -91,10 +112,8 @@ def check_models_exist():
     return missing
 
 
-def download_model(filename, models_dir, progress_callback=None):
-    """Download a model file from GitHub Releases."""
-    url = f"https://github.com/{GITHUB_REPO}/releases/download/{GITHUB_RELEASE_TAG}/{filename}"
-    dest_path = os.path.join(models_dir, filename)
+def download_file(url, dest_path, progress_callback=None):
+    """Download a file from a URL."""
     tmp_path = dest_path + '.tmp'
 
     req = urllib.request.Request(url)
@@ -116,6 +135,18 @@ def download_model(filename, models_dir, progress_callback=None):
     os.replace(tmp_path, dest_path)
 
 
+def download_model(filename, models_dir, progress_callback=None):
+    """Download a model file from GitHub Releases."""
+    url = f"https://github.com/{GITHUB_REPO}/releases/download/{GITHUB_RELEASE_TAG}/{filename}"
+    download_file(url, os.path.join(models_dir, filename), progress_callback)
+
+
+def download_huggingface_model(hf_filename, dest_path, progress_callback=None):
+    """Download a model file from HuggingFace."""
+    url = f"https://huggingface.co/{HUGGINGFACE_REPO}/resolve/main/{hf_filename}"
+    download_file(url, dest_path, progress_callback)
+
+
 class LineFormerApp:
     def __init__(self):
         self.infer_module = None
@@ -127,6 +158,7 @@ class LineFormerApp:
         self.axis_config = None
         self.ocr_results = None
         self.raw_lines = None  # Cached raw points from model inference
+        self.current_model_key = "general"
 
         # Settings
         self.sort_mode = "mean_y_desc"
@@ -135,14 +167,21 @@ class LineFormerApp:
         self.max_points = 20
         self.auto_axis = True
 
-    def load_lineformer_model(self):
-        """Load LineFormer model."""
+    def load_lineformer_model(self, model_key=None, progress_callback=None):
+        """Load LineFormer model. Downloads from HuggingFace if needed."""
         import infer
-        models_dir = get_models_dir()
-        CKPT = os.path.join(models_dir, "iter_3000.pth")
+        if model_key is not None:
+            self.current_model_key = model_key
+        model_info = LINEFORMER_MODELS[self.current_model_key]
+        ckpt = os.path.join(get_models_dir(), model_info["checkpoint"])
+        # Download from HuggingFace if not present
+        if not os.path.exists(ckpt) and "huggingface_filename" in model_info:
+            download_huggingface_model(
+                model_info["huggingface_filename"], ckpt, progress_callback
+            )
         CONFIG = os.path.join(LINEFORMER_DIR, "lineformer_swin_t_config.py")
         DEVICE = "cpu"
-        infer.load_model(CONFIG, CKPT, DEVICE)
+        infer.load_model(CONFIG, ckpt, DEVICE)
         self.infer_module = infer
 
     def load_chartdete_model(self):
@@ -535,6 +574,16 @@ def main(page: ft.Page):
     # Axis detection status text (no checkbox - always on when available)
     axis_status_text = ft.Text("", size=12)
 
+    model_dropdown = ft.Dropdown(
+        label="Line Model",
+        value="general",
+        width=200,
+        options=[
+            ft.dropdown.Option(key, info["name"])
+            for key, info in LINEFORMER_MODELS.items()
+        ],
+    )
+
     sort_dropdown = ft.Dropdown(
         label="Sort Lines",
         value="mean_y_desc",
@@ -607,6 +656,49 @@ def main(page: ft.Page):
         page.update()
         reprocess_lines()
 
+    def on_model_change(e):
+        key = model_dropdown.value
+        if key == app.current_model_key:
+            return
+        status_text.value = f"Loading {LINEFORMER_MODELS[key]['name']} model..."
+        progress_ring.visible = True
+        page.update()
+
+        def switch_model():
+            try:
+                model_info = LINEFORMER_MODELS[key]
+                ckpt_path = os.path.join(get_models_dir(), model_info["checkpoint"])
+                needs_download = not os.path.exists(ckpt_path) and "huggingface_filename" in model_info
+
+                if needs_download:
+                    download_progress.visible = True
+                    download_progress.value = 0
+                    page.update()
+
+                    def on_progress(downloaded, total):
+                        download_progress.value = downloaded / total
+                        status_text.value = f"Downloading {model_info['name']}... {downloaded // (1024*1024)}MB / {total // (1024*1024)}MB"
+                        page.update()
+
+                    app.load_lineformer_model(key, progress_callback=on_progress)
+                    download_progress.visible = False
+                else:
+                    app.load_lineformer_model(key)
+
+                app.raw_lines = None
+                status_text.value = "Model loaded."
+                progress_ring.visible = False
+                page.update()
+                if app.current_image is not None:
+                    process_image(skip_axis=app.axis_config is not None)
+            except Exception as ex:
+                status_text.value = f"Model load failed: {ex}"
+                progress_ring.visible = False
+                page.update()
+
+        page.run_thread(switch_model)
+
+    model_dropdown.on_change = on_model_change
     sort_dropdown.on_change = on_sort_change
     downsample_dropdown.on_change = on_downsample_change
     max_points_slider.on_change = on_max_points_change
@@ -616,7 +708,7 @@ def main(page: ft.Page):
     export_sd_btn = None
     export_wpd_btn = None
 
-    def process_image():
+    def process_image(skip_axis=False):
         """Process current image and update display."""
         nonlocal export_sd_btn, export_wpd_btn
 
@@ -631,23 +723,27 @@ def main(page: ft.Page):
             # Step 1: Extract lines
             app.data_series = app.extract_lines(app.current_image)
 
-            # Step 2: Detect axis if enabled
-            app.axis_config = None
-            app.ocr_results = None
-            if app.auto_axis and app.chartdete_module is not None:
-                status_text.value = "Detecting axis labels..."
-                page.update()
-                app.axis_config, app.ocr_results = app.detect_axis_calibration(app.current_image)
-
-            # Step 3: Draw visualization
+            # Show results immediately after line extraction
             app.result_image = app.draw_points_on_image(app.current_image, app.data_series, app.axis_config)
             result_image.src_base64 = image_to_base64(cv2.cvtColor(app.result_image, cv2.COLOR_BGR2RGB))
             result_image.visible = True
-
-            # Update info
             total_points = sum(len(s['points']) for s in app.data_series)
             line_pts = [len(s['points']) for s in app.data_series]
             info_text.value = f"{len(app.data_series)} lines detected ({total_points} points)\nPoints per line: {', '.join(map(str, line_pts))}"
+            page.update()
+
+            # Step 2: Detect axis if enabled (skip if already detected)
+            if not skip_axis:
+                app.axis_config = None
+                app.ocr_results = None
+                if app.auto_axis and app.chartdete_module is not None:
+                    status_text.value = "Detecting axis labels..."
+                    page.update()
+                    app.axis_config, app.ocr_results = app.detect_axis_calibration(app.current_image)
+
+                    # Redraw with axis calibration overlay
+                    app.result_image = app.draw_points_on_image(app.current_image, app.data_series, app.axis_config)
+                    result_image.src_base64 = image_to_base64(cv2.cvtColor(app.result_image, cv2.COLOR_BGR2RGB))
 
             # Update axis info
             if app.axis_config is not None:
@@ -763,6 +859,7 @@ def main(page: ft.Page):
         content=ft.Column([
             ft.Text("Settings", size=18, weight=ft.FontWeight.BOLD),
             ft.Divider(),
+            model_dropdown,
             sort_dropdown,
             ft.Divider(),
             downsample_dropdown,
@@ -795,9 +892,12 @@ def main(page: ft.Page):
         border_radius=10,
     )
 
+    paste_hint = ft.Text("or Cmd+V to paste", size=12, color=ft.colors.GREY_500)
+
     main_content = ft.Column([
         ft.Row([
             upload_btn,
+            paste_hint,
             progress_ring,
             status_text,
             axis_status_text,
