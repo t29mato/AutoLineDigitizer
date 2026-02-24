@@ -45,6 +45,24 @@ jobs:
           CC=clang CXX=clang++ CFLAGS='-stdlib=libc++' MMCV_WITH_OPS=1 pip install mmcv-full==1.7.2 --no-build-isolation
           pip install opencv-python-headless scipy scikit-image bresenham easyocr terminaltables matplotlib pycocotools
 
+      - name: Download EasyOCR models
+        run: |
+          mkdir -p easyocr_models
+          curl -L -o easyocr_models/craft_mlt_25k.pth https://github.com/JaidedAI/EasyOCR/releases/download/pre-v1.1.6/craft_mlt_25k.zip
+          curl -L -o easyocr_models/english_g2.pth https://github.com/JaidedAI/EasyOCR/releases/download/v1.3/english_g2.zip
+          cd easyocr_models
+          python -c "
+          import zipfile, os
+          for f in ['craft_mlt_25k.pth', 'english_g2.pth']:
+              zf = f  # downloaded as .pth but is actually .zip
+              base = os.path.splitext(f)[0]
+              os.rename(f, base + '.zip')
+              with zipfile.ZipFile(base + '.zip', 'r') as z:
+                  z.extractall('.')
+              os.remove(base + '.zip')
+          "
+          ls -la
+
       - name: Embed version
         run: |
           VERSION="${GITHUB_REF_NAME:-dev}"
@@ -97,6 +115,16 @@ jobs:
           pip install opencv-python-headless scipy scikit-image bresenham easyocr terminaltables matplotlib pycocotools
         env:
           MMCV_WITH_OPS: '1'
+
+      - name: Download EasyOCR models
+        run: |
+          mkdir easyocr_models
+          Invoke-WebRequest -Uri "https://github.com/JaidedAI/EasyOCR/releases/download/pre-v1.1.6/craft_mlt_25k.zip" -OutFile "easyocr_models\craft_mlt_25k.zip"
+          Invoke-WebRequest -Uri "https://github.com/JaidedAI/EasyOCR/releases/download/v1.3/english_g2.zip" -OutFile "easyocr_models\english_g2.zip"
+          Expand-Archive -Path "easyocr_models\craft_mlt_25k.zip" -DestinationPath "easyocr_models" -Force
+          Expand-Archive -Path "easyocr_models\english_g2.zip" -DestinationPath "easyocr_models" -Force
+          Remove-Item "easyocr_models\*.zip"
+          Get-ChildItem easyocr_models
 
       - name: Embed version
         run: |

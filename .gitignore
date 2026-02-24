@@ -164,6 +164,9 @@ models/*.pth
 models/*.pt
 !models/.gitkeep
 
+# EasyOCR models (downloaded at build time)
+easyocr_models/
+
 # Local test/data files (not for distribution)
 test_image/
 test_output/

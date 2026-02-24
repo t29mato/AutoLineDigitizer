@@ -40,8 +40,7 @@ a = Analysis(
         # src module
         ('src/chartdete_infer.py', 'src'),
         # EasyOCR models (bundled for offline use)
-        (os.path.expanduser('~/.EasyOCR/model/craft_mlt_25k.pth'), 'easyocr_models'),
-        (os.path.expanduser('~/.EasyOCR/model/english_g2.pth'), 'easyocr_models'),
+        (os.path.join(spec_dir, 'easyocr_models'), 'easyocr_models'),
     ],
     hiddenimports=[
         'mmdet',
