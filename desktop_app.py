@@ -719,17 +719,24 @@ def main(page: ft.Page):
                 if app.current_image is not None:
                     process_image(skip_axis=app.axis_config is not None)
             except Exception as ex:
-                import webbrowser
                 models_dir = get_models_dir()
                 model_info = LINEFORMER_MODELS[key]
                 ckpt_path = os.path.join(models_dir, model_info["checkpoint"])
                 download_progress.visible = False
                 progress_ring.visible = False
                 if not os.path.exists(ckpt_path):
-                    # Download failed - guide user to manual download
-                    hf_filename = model_info.get("huggingface_filename", "")
-                    status_text.value = f"Download failed. Please download '{hf_filename}' from HuggingFace, rename to '{model_info['checkpoint']}', and place in: {models_dir}"
-                    webbrowser.open(HUGGINGFACE_MODELS_URL)
+                    hf_filename = model_info.get("huggingface_filename", model_info["checkpoint"])
+                    status_text.value = ""
+                    status_text.visible = False
+                    download_help = ft.Row([
+                        ft.Text("Download failed."),
+                        ft.Text(f"Download '{hf_filename}' from"),
+                        ft.TextButton("HuggingFace", url=HUGGINGFACE_MODELS_URL),
+                        ft.Text(f", rename to '{model_info['checkpoint']}', place in: {models_dir}"),
+                    ], spacing=5, wrap=True)
+                    # Insert after the status row
+                    if len(main_content.controls) > 1:
+                        main_content.controls.insert(1, download_help)
                 else:
                     status_text.value = f"Model load failed: {ex}"
                 page.update()
@@ -993,11 +1000,19 @@ def main(page: ft.Page):
                     try:
                         download_model(filename, models_dir, progress_callback=on_progress)
                     except Exception as e:
-                        import webbrowser
                         download_progress.visible = False
                         progress_ring.visible = False
-                        status_text.value = f"Auto-download failed. Please download models manually and place in: {models_dir}"
-                        webbrowser.open(GITHUB_MODELS_URL)
+                        status_text.value = ""
+                        status_text.visible = False
+                        download_help = ft.Column([
+                            ft.Text("Auto-download failed. Please download models manually:"),
+                            ft.Row([
+                                ft.Text("1. Download from"),
+                                ft.TextButton("GitHub Releases", url=GITHUB_MODELS_URL),
+                                ft.Text(f"and place in: {models_dir}"),
+                            ], spacing=5, wrap=True),
+                        ], spacing=5)
+                        main_content.controls.insert(0, download_help)
                         page.update()
                         return
 
