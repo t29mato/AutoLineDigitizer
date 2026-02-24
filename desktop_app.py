@@ -117,12 +117,11 @@ def check_models_exist():
 
 
 def download_file(url, dest_path, progress_callback=None):
-    """Download a file from a URL."""
+    """Download a file from a URL with SSL fallback for corporate proxies."""
     import ssl
     tmp_path = dest_path + '.tmp'
 
     req = urllib.request.Request(url)
-    # Try system default SSL first, then unverified as fallback for corporate proxies
     try:
         response_ctx = urllib.request.urlopen(req)
     except Exception:
@@ -144,6 +143,11 @@ def download_file(url, dest_path, progress_callback=None):
                     progress_callback(downloaded, total_size)
 
     os.replace(tmp_path, dest_path)
+
+
+# Download URLs for manual browser download
+GITHUB_MODELS_URL = f"https://github.com/{GITHUB_REPO}/releases/tag/{GITHUB_RELEASE_TAG}"
+HUGGINGFACE_MODELS_URL = f"https://huggingface.co/{HUGGINGFACE_REPO}/tree/main"
 
 
 def download_model(filename, models_dir, progress_callback=None):
@@ -715,13 +719,19 @@ def main(page: ft.Page):
                 if app.current_image is not None:
                     process_image(skip_axis=app.axis_config is not None)
             except Exception as ex:
-                import traceback
-                tb = traceback.format_exc()
-                # Find the file/line where error originated
-                lines = [l for l in tb.strip().split('\n') if 'File "' in l]
-                origin = lines[-1].strip() if lines else ""
-                status_text.value = f"Model load failed: {ex} [{origin}]"
+                import webbrowser
+                models_dir = get_models_dir()
+                model_info = LINEFORMER_MODELS[key]
+                ckpt_path = os.path.join(models_dir, model_info["checkpoint"])
+                download_progress.visible = False
                 progress_ring.visible = False
+                if not os.path.exists(ckpt_path):
+                    # Download failed - guide user to manual download
+                    hf_filename = model_info.get("huggingface_filename", "")
+                    status_text.value = f"Download failed. Please download '{hf_filename}' from HuggingFace, rename to '{model_info['checkpoint']}', and place in: {models_dir}"
+                    webbrowser.open(HUGGINGFACE_MODELS_URL)
+                else:
+                    status_text.value = f"Model load failed: {ex}"
                 page.update()
 
         page.run_thread(switch_model)
@@ -983,9 +993,11 @@ def main(page: ft.Page):
                     try:
                         download_model(filename, models_dir, progress_callback=on_progress)
                     except Exception as e:
-                        status_text.value = f"Download failed: {e}"
+                        import webbrowser
                         download_progress.visible = False
                         progress_ring.visible = False
+                        status_text.value = f"Auto-download failed. Please download models manually and place in: {models_dir}"
+                        webbrowser.open(GITHUB_MODELS_URL)
                         page.update()
                         return
 
