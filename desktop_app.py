@@ -1147,58 +1147,38 @@ def main(page: ft.Page):
                 download_progress.visible = False
                 page.update()
 
-            import threading
-
-            line_error = [None]
-            axis_error = [None]
-
-            def load_lineformer():
-                try:
-                    app.load_lineformer_model()
-                except Exception as e:
-                    line_error[0] = e
-
-            def load_chartdete():
-                if not CHARTDETE_AVAILABLE:
-                    app.auto_axis = False
-                    axis_error[0] = "Not available"
-                    return
-                try:
-                    app.load_chartdete_model()
-                except Exception as e:
-                    app.auto_axis = False
-                    axis_error[0] = e
-
+            # Load LineFormer
             status_text.value = "Loading..."
+            axis_status_text.value = ""
+            page.update()
+
+            try:
+                app.load_lineformer_model()
+                status_text.value = "Line model loaded."
+                status_text.color = ft.colors.GREEN_700
+            except Exception as e:
+                status_text.value = f"Failed: {e}"
+                status_text.color = ft.colors.RED_700
+            progress_ring.visible = False
+            page.update()
+
+            # Load ChartDete
             axis_status_text.value = "Loading..."
             page.update()
 
-            t1 = threading.Thread(target=load_lineformer)
-            t2 = threading.Thread(target=load_chartdete)
-            t1.start()
-            t2.start()
-            t1.join()
-            t2.join()
-
-            # Line model result
-            if line_error[0]:
-                status_text.value = f"Failed: {line_error[0]}"
-                status_text.color = ft.colors.RED_700
-            else:
-                status_text.value = "Line model loaded."
-                status_text.color = ft.colors.GREEN_700
-            progress_ring.visible = False
-
-            # Axis model result
-            if axis_error[0] == "Not available":
+            if not CHARTDETE_AVAILABLE:
+                app.auto_axis = False
                 axis_status_text.value = "Not available"
                 axis_status_text.color = ft.colors.ORANGE_700
-            elif axis_error[0]:
-                axis_status_text.value = f"Failed: {str(axis_error[0])[:30]}"
-                axis_status_text.color = ft.colors.RED_700
             else:
-                axis_status_text.value = "Axis model loaded."
-                axis_status_text.color = ft.colors.GREEN_700
+                try:
+                    app.load_chartdete_model()
+                    axis_status_text.value = "Axis model loaded."
+                    axis_status_text.color = ft.colors.GREEN_700
+                except Exception as e:
+                    app.auto_axis = False
+                    axis_status_text.value = f"Failed: {str(e)[:30]}"
+                    axis_status_text.color = ft.colors.RED_700
 
         except Exception as e:
             status_text.value = f"Failed: {e}"
