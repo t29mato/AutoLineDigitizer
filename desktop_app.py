@@ -719,22 +719,32 @@ def main(page: ft.Page):
                 if app.current_image is not None:
                     process_image(skip_axis=app.axis_config is not None)
             except Exception as ex:
-                models_dir = get_models_dir()
                 model_info = LINEFORMER_MODELS[key]
-                ckpt_path = os.path.join(models_dir, model_info["checkpoint"])
+                ckpt_path = os.path.join(get_models_dir(), model_info["checkpoint"])
                 download_progress.visible = False
                 progress_ring.visible = False
                 if not os.path.exists(ckpt_path):
                     hf_filename = model_info.get("huggingface_filename", model_info["checkpoint"])
-                    status_text.value = ""
-                    status_text.visible = False
-                    download_help = ft.Row([
-                        ft.Text("Download failed."),
-                        ft.Text(f"Download '{hf_filename}' from"),
-                        ft.TextButton("HuggingFace", url=HUGGINGFACE_MODELS_URL),
-                        ft.Text(f", rename to '{model_info['checkpoint']}', place in: {models_dir}"),
-                    ], spacing=5, wrap=True)
-                    # Insert after the status row
+                    status_text.value = "Download failed."
+
+                    def on_import_finetune(_, _key=key):
+                        _model_import_context["mode"] = f"finetune:{_key}"
+                        model_import_picker.pick_files(
+                            allowed_extensions=["pth"],
+                            dialog_title=f"Select {hf_filename}",
+                        )
+
+                    download_help = ft.Column([
+                        ft.Row([
+                            ft.Text(f"Download '{hf_filename}' from"),
+                            ft.TextButton("HuggingFace", url=HUGGINGFACE_MODELS_URL),
+                        ], spacing=5),
+                        ft.ElevatedButton(
+                            "Import Model",
+                            icon=ft.icons.FILE_UPLOAD,
+                            on_click=on_import_finetune,
+                        ),
+                    ], spacing=5)
                     if len(main_content.controls) > 1:
                         main_content.controls.insert(1, download_help)
                 else:
@@ -868,7 +878,71 @@ def main(page: ft.Page):
 
     save_sd_picker = ft.FilePicker(on_result=save_sd_result)
     save_wpd_picker = ft.FilePicker(on_result=save_wpd_result)
-    page.overlay.extend([save_sd_picker, save_wpd_picker])
+
+    # Model import file picker
+    import shutil
+    _model_import_context = {"mode": None}  # "startup" or "finetune:<key>"
+
+    def import_model_result(e: ft.FilePickerResultEvent):
+        if not e.files:
+            return
+        models_dir = get_models_dir()
+        mode = _model_import_context.get("mode")
+
+        if mode == "startup":
+            # Import base models (iter_3000.pth, checkpoint.pth)
+            imported = []
+            for f in e.files:
+                src = f.path
+                fname = os.path.basename(src)
+                if fname in MODEL_FILES:
+                    shutil.copy2(src, os.path.join(models_dir, fname))
+                    imported.append(fname)
+            missing = check_models_exist()
+            if not missing:
+                status_text.value = "Models imported. Loading..."
+                status_text.visible = True
+                # Remove download help UI
+                main_content.controls[:] = [c for c in main_content.controls if not isinstance(c, ft.Column) or c == main_content.controls[-1]]
+                page.update()
+                page.run_thread(load_models_async)
+            else:
+                status_text.value = f"Still missing: {', '.join(missing)}"
+                status_text.visible = True
+                page.update()
+
+        elif mode and mode.startswith("finetune:"):
+            model_key = mode.split(":", 1)[1]
+            model_info = LINEFORMER_MODELS[model_key]
+            if e.files:
+                src = e.files[0].path
+                dest = os.path.join(models_dir, model_info["checkpoint"])
+                shutil.copy2(src, dest)
+                status_text.value = f"Model imported. Loading {model_info['name']}..."
+                status_text.visible = True
+                # Remove download help UI
+                main_content.controls[:] = [c for c in main_content.controls
+                                            if not (isinstance(c, ft.Row) and any(
+                                                isinstance(child, ft.TextButton) for child in getattr(c, 'controls', [])))]
+                page.update()
+
+                def load_imported():
+                    try:
+                        app.load_lineformer_model(model_key)
+                        app.raw_lines = None
+                        status_text.value = "Model loaded."
+                        progress_ring.visible = False
+                        page.update()
+                        if app.current_image is not None:
+                            process_image(skip_axis=app.axis_config is not None)
+                    except Exception as ex:
+                        status_text.value = f"Model load failed: {ex}"
+                        progress_ring.visible = False
+                        page.update()
+                page.run_thread(load_imported)
+
+    model_import_picker = ft.FilePicker(on_result=import_model_result)
+    page.overlay.extend([save_sd_picker, save_wpd_picker, model_import_picker])
 
     # Buttons
     upload_btn = ft.ElevatedButton(
@@ -1002,15 +1076,31 @@ def main(page: ft.Page):
                     except Exception as e:
                         download_progress.visible = False
                         progress_ring.visible = False
-                        status_text.value = ""
-                        status_text.visible = False
+                        status_text.value = "Auto-download failed."
+
+                        def on_import_startup(_):
+                            _model_import_context["mode"] = "startup"
+                            model_import_picker.pick_files(
+                                allow_multiple=True,
+                                allowed_extensions=["pth"],
+                                dialog_title="Select model files (iter_3000.pth, checkpoint.pth)",
+                            )
+
                         download_help = ft.Column([
-                            ft.Text("Auto-download failed. Please download models manually:"),
+                            ft.Text("Please download models and import:"),
                             ft.Row([
                                 ft.Text("1. Download from"),
                                 ft.TextButton("GitHub Releases", url=GITHUB_MODELS_URL),
-                                ft.Text(f"and place in: {models_dir}"),
-                            ], spacing=5, wrap=True),
+                            ], spacing=5),
+                            ft.Row([
+                                ft.Text("2."),
+                                ft.ElevatedButton(
+                                    "Import Models",
+                                    icon=ft.icons.FILE_UPLOAD,
+                                    on_click=on_import_startup,
+                                ),
+                                ft.Text("(select iter_3000.pth and checkpoint.pth)"),
+                            ], spacing=5),
                         ], spacing=5)
                         main_content.controls.insert(0, download_help)
                         page.update()
