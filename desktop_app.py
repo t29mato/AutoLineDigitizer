@@ -792,8 +792,8 @@ def main(page: ft.Page):
         if app.current_image is None or app.infer_module is None:
             return
 
-        status_text.value = "Extracting lines..."
-        progress_ring.visible = True
+        process_status_text.value = "Extracting lines..."
+        process_progress_ring.visible = True
         page.update()
 
         try:
@@ -814,7 +814,7 @@ def main(page: ft.Page):
                 app.axis_config = None
                 app.ocr_results = None
                 if app.auto_axis and app.chartdete_module is not None:
-                    status_text.value = "Detecting axis labels..."
+                    process_status_text.value = "Detecting axis labels..."
                     page.update()
                     app.axis_config, app.ocr_results = app.detect_axis_calibration(app.current_image)
 
@@ -830,16 +830,16 @@ def main(page: ft.Page):
             else:
                 axis_info_text.value = ""
 
-            status_text.value = ""
-            progress_ring.visible = False
+            process_status_text.value = ""
+            process_progress_ring.visible = False
 
             # Enable export buttons
             export_sd_btn.disabled = False
             export_wpd_btn.disabled = False
 
         except Exception as e:
-            status_text.value = f"Error: {e}"
-            progress_ring.visible = False
+            process_status_text.value = f"Error: {e}"
+            process_progress_ring.visible = False
 
         page.update()
 
@@ -860,7 +860,7 @@ def main(page: ft.Page):
             if img is not None:
                 load_image(img, file_path)
             else:
-                status_text.value = "Failed to read image"
+                process_status_text.value = "Failed to read image"
                 page.update()
 
     def on_keyboard(e: ft.KeyboardEvent):
@@ -885,7 +885,7 @@ def main(page: ft.Page):
             zip_buffer = app.create_starry_digitizer_zip(app.current_image, project_json)
             with open(e.path, 'wb') as f:
                 f.write(zip_buffer.getvalue())
-            status_text.value = f"Saved: {e.path}"
+            process_status_text.value = f"Saved: {e.path}"
             page.update()
 
     def save_wpd_result(e: ft.FilePickerResultEvent):
@@ -895,7 +895,7 @@ def main(page: ft.Page):
             tar_buffer = app.create_wpd_tar(app.current_image, wpd_json, project_name=base_name)
             with open(e.path, 'wb') as f:
                 f.write(tar_buffer.getvalue())
-            status_text.value = f"Saved: {e.path}"
+            process_status_text.value = f"Saved: {e.path}"
             page.update()
 
     save_sd_picker = ft.FilePicker(on_result=save_sd_result)
@@ -986,7 +986,7 @@ def main(page: ft.Page):
 
     # Buttons
     upload_btn = ft.ElevatedButton(
-        "Open Image",
+        "Open Image (or Cmd+V)",
         icon=ft.icons.FOLDER_OPEN,
         on_click=lambda _: file_picker.pick_files(
             allowed_extensions=["png", "jpg", "jpeg", "bmp", "tiff"]
@@ -1056,12 +1056,14 @@ def main(page: ft.Page):
         border_radius=10,
     )
 
-    paste_hint = ft.Text("or Cmd+V to paste", size=12, color=ft.colors.GREY_500)
+    process_status_text = ft.Text("", size=12)
+    process_progress_ring = ft.ProgressRing(visible=False, width=16, height=16)
 
     main_content = ft.Column([
         ft.Row([
             upload_btn,
-            paste_hint,
+            process_progress_ring,
+            process_status_text,
         ], alignment=ft.MainAxisAlignment.START),
         ft.Divider(),
         ft.Row([
@@ -1157,6 +1159,8 @@ def main(page: ft.Page):
                 status_text.value = "Line model loaded."
                 status_text.color = ft.colors.GREEN_700
             except Exception as e:
+                import traceback
+                traceback.print_exc()
                 status_text.value = f"Failed: {e}"
                 status_text.color = ft.colors.RED_700
             progress_ring.visible = False
@@ -1176,8 +1180,10 @@ def main(page: ft.Page):
                     axis_status_text.value = "Axis model loaded."
                     axis_status_text.color = ft.colors.GREEN_700
                 except Exception as e:
+                    import traceback
+                    traceback.print_exc()
                     app.auto_axis = False
-                    axis_status_text.value = f"Failed: {str(e)[:30]}"
+                    axis_status_text.value = f"Failed: {e}"
                     axis_status_text.color = ft.colors.RED_700
 
         except Exception as e:
