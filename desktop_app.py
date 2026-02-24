@@ -755,10 +755,8 @@ def main(page: ft.Page):
 
                     download_help = ft.Column([
                         ft.Text("Download failed.", color=ft.colors.RED),
-                        ft.Row([
-                            ft.Text(f"Download '{hf_filename}' from"),
-                            ft.TextButton("HuggingFace", url=HUGGINGFACE_MODELS_URL),
-                        ], spacing=5),
+                        ft.Text(f"Download '{hf_filename}' from:", no_wrap=False),
+                        ft.TextButton("HuggingFace", url=HUGGINGFACE_MODELS_URL),
                         ft.ElevatedButton(
                             "Import Model",
                             icon=ft.icons.FILE_UPLOAD,
@@ -1129,19 +1127,15 @@ def main(page: ft.Page):
 
                         download_help = ft.Column([
                             ft.Text("Auto-download failed.", color=ft.colors.RED),
-                            ft.Row([
-                                ft.Text("1. Download from"),
-                                ft.TextButton("GitHub Releases", url=GITHUB_MODELS_URL),
-                            ], spacing=5),
-                            ft.Row([
-                                ft.Text("2."),
-                                ft.ElevatedButton(
-                                    "Import Models",
-                                    icon=ft.icons.FILE_UPLOAD,
-                                    on_click=on_import_startup,
-                                ),
-                                ft.Text("(select iter_3000.pth and checkpoint.pth)"),
-                            ], spacing=5),
+                            ft.Text("1. Download from:", no_wrap=False),
+                            ft.TextButton("GitHub Releases", url=GITHUB_MODELS_URL),
+                            ft.Text("2. Import models:", no_wrap=False),
+                            ft.ElevatedButton(
+                                "Import Models",
+                                icon=ft.icons.FILE_UPLOAD,
+                                on_click=on_import_startup,
+                            ),
+                            ft.Text("(select iter_3000.pth and checkpoint.pth)", size=11, no_wrap=False, color=ft.colors.GREY_600),
                         ], spacing=5)
                         _download_help_controls.append(download_help)
                         sidebar_controls = settings_panel.content.controls
