@@ -708,7 +708,12 @@ def main(page: ft.Page):
                 if app.current_image is not None:
                     process_image(skip_axis=app.axis_config is not None)
             except Exception as ex:
-                status_text.value = f"Model load failed: {ex}"
+                import traceback
+                tb = traceback.format_exc()
+                # Find the file/line where error originated
+                lines = [l for l in tb.strip().split('\n') if 'File "' in l]
+                origin = lines[-1].strip() if lines else ""
+                status_text.value = f"Model load failed: {ex} [{origin}]"
                 progress_ring.visible = False
                 page.update()
 
