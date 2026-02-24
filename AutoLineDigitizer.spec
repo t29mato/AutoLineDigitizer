@@ -39,6 +39,8 @@ a = Analysis(
         ('submodules/chartdete/configs', 'submodules/chartdete/configs'),
         # src module
         ('src/chartdete_infer.py', 'src'),
+        # EasyOCR models (bundled for offline use)
+        (os.path.join(spec_dir, 'easyocr_models'), 'easyocr_models'),
     ],
     hiddenimports=[
         'mmdet',

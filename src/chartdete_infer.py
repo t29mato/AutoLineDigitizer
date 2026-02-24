@@ -208,7 +208,14 @@ def get_ocr_reader():
     global _ocr_reader
     if _ocr_reader is None:
         import easyocr
-        _ocr_reader = easyocr.Reader(['en'], gpu=False)
+        # Use bundled models for PyInstaller builds
+        model_dir = None
+        if getattr(sys, 'frozen', False):
+            model_dir = os.path.join(sys._MEIPASS, 'easyocr_models')
+        if model_dir and os.path.isdir(model_dir):
+            _ocr_reader = easyocr.Reader(['en'], gpu=False, model_storage_directory=model_dir, download_enabled=False)
+        else:
+            _ocr_reader = easyocr.Reader(['en'], gpu=False)
     return _ocr_reader
 
 

@@ -7,7 +7,6 @@ Automatic axis detection using ChartDete + OCR.
 
 import sys
 import os
-import ssl
 
 APP_VERSION = "dev"
 
@@ -16,9 +15,6 @@ APP_VERSION = "dev"
 if getattr(sys, 'frozen', False):
     # Running as PyInstaller bundle
     SCRIPT_DIR = sys._MEIPASS
-    # Set SSL certificate path for bundled app
-    os.environ['SSL_CERT_FILE'] = os.path.join(SCRIPT_DIR, 'certifi', 'cacert.pem')
-    ssl._create_default_https_context = ssl.create_default_context
 else:
     # Running as normal script
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -62,10 +58,18 @@ from pathlib import Path
 GITHUB_REPO = "t29mato/AutoLineDigitizer"
 GITHUB_RELEASE_TAG = "models"
 
-# Model files to download
+# Model files to download (filename -> display name)
 MODEL_FILES = {
     "iter_3000.pth": "LineFormer",
     "checkpoint.pth": "ChartDete",
+}
+
+# SHA256 hashes for model validation (first 16 hex chars)
+MODEL_HASHES = {
+    "iter_3000.pth": "ac03d7d52a11ce25",
+    "checkpoint.pth": "aef812b0e37faf7c",
+    "lineformer_battery_iter_5000.pth": "587f492d381674bd",
+    "lineformer_battery_best_iter_1300.pth": "e3189abf87a7bff7",
 }
 
 # HuggingFace repository for fine-tuned models
@@ -79,13 +83,13 @@ LINEFORMER_MODELS = {
     },
     "battery_iter5000": {
         "name": "Battery (iter_5000)",
-        "checkpoint": "battery_iter_5000.pth",
-        "huggingface_filename": "iter_5000.pth",
+        "checkpoint": "lineformer_battery_iter_5000.pth",
+        "huggingface_filename": "lineformer_battery_iter_5000.pth",
     },
-    "battery_best_segm": {
-        "name": "Battery (best_segm)",
-        "checkpoint": "battery_best_segm_mAP_iter_1300.pth",
-        "huggingface_filename": "best_segm_mAP_iter_1300.pth",
+    "battery_best": {
+        "name": "Battery (best)",
+        "checkpoint": "lineformer_battery_best_iter_1300.pth",
+        "huggingface_filename": "lineformer_battery_best_iter_1300.pth",
     },
 }
 
@@ -118,12 +122,35 @@ def check_models_exist():
     return missing
 
 
+def verify_model_hash(file_path, expected_filename):
+    """Verify a model file's SHA256 hash. Returns (ok, actual_hash_prefix)."""
+    import hashlib
+    expected = MODEL_HASHES.get(expected_filename)
+    if not expected:
+        return True, ""  # No hash registered, skip check
+    h = hashlib.sha256()
+    with open(file_path, 'rb') as f:
+        while True:
+            chunk = f.read(1024 * 1024)
+            if not chunk:
+                break
+            h.update(chunk)
+    actual = h.hexdigest()[:16]
+    return actual == expected, actual
+
+
 def download_file(url, dest_path, progress_callback=None):
-    """Download a file from a URL."""
+    """Download a file from a URL with SSL fallback for corporate proxies."""
+    import ssl
     tmp_path = dest_path + '.tmp'
 
     req = urllib.request.Request(url)
-    with urllib.request.urlopen(req) as response:
+    try:
+        response_ctx = urllib.request.urlopen(req)
+    except Exception:
+        ctx = ssl._create_unverified_context()
+        response_ctx = urllib.request.urlopen(req, context=ctx)
+    with response_ctx as response:
         total_size = int(response.headers.get('Content-Length', 0))
         downloaded = 0
         block_size = 1024 * 1024  # 1MB
@@ -141,16 +168,23 @@ def download_file(url, dest_path, progress_callback=None):
     os.replace(tmp_path, dest_path)
 
 
+# Download URLs for manual browser download
+GITHUB_MODELS_URL = f"https://github.com/{GITHUB_REPO}/releases/tag/{GITHUB_RELEASE_TAG}"
+HUGGINGFACE_MODELS_URL = f"https://huggingface.co/{HUGGINGFACE_REPO}/tree/main"
+
+
 def download_model(filename, models_dir, progress_callback=None):
     """Download a model file from GitHub Releases."""
     url = f"https://github.com/{GITHUB_REPO}/releases/download/{GITHUB_RELEASE_TAG}/{filename}"
     download_file(url, os.path.join(models_dir, filename), progress_callback)
 
 
-def download_huggingface_model(hf_filename, dest_path, progress_callback=None):
-    """Download a model file from HuggingFace."""
-    url = f"https://huggingface.co/{HUGGINGFACE_REPO}/resolve/main/{hf_filename}"
-    download_file(url, dest_path, progress_callback)
+def download_finetuned_model(model_info, dest_path, progress_callback=None):
+    """Download a fine-tuned model from HuggingFace."""
+    hf_filename = model_info.get("huggingface_filename")
+    if hf_filename:
+        url = f"https://huggingface.co/{HUGGINGFACE_REPO}/resolve/main/{hf_filename}"
+        download_file(url, dest_path, progress_callback)
 
 
 class LineFormerApp:
@@ -180,11 +214,9 @@ class LineFormerApp:
             self.current_model_key = model_key
         model_info = LINEFORMER_MODELS[self.current_model_key]
         ckpt = os.path.join(get_models_dir(), model_info["checkpoint"])
-        # Download from HuggingFace if not present
+        # Download if not present
         if not os.path.exists(ckpt) and "huggingface_filename" in model_info:
-            download_huggingface_model(
-                model_info["huggingface_filename"], ckpt, progress_callback
-            )
+            download_finetuned_model(model_info, ckpt, progress_callback)
         CONFIG = os.path.join(LINEFORMER_DIR, "lineformer_swin_t_config.py")
         DEVICE = "cpu"
         infer.load_model(CONFIG, ckpt, DEVICE)
@@ -568,8 +600,9 @@ def main(page: ft.Page):
     app = LineFormerApp()
 
     # UI Components
-    status_text = ft.Text("Loading models...", size=14)
-    progress_ring = ft.ProgressRing(visible=True, width=20, height=20)
+    status_text = ft.Text("Loading...", size=12, no_wrap=False, expand=True)
+    progress_ring = ft.ProgressRing(visible=True, width=16, height=16)
+    axis_status_text = ft.Text("Loading...", size=12, no_wrap=False)
 
     input_image = ft.Image(visible=False, fit=ft.ImageFit.FIT_WIDTH)
     result_image = ft.Image(visible=False, fit=ft.ImageFit.FIT_WIDTH)
@@ -577,8 +610,14 @@ def main(page: ft.Page):
     info_text = ft.Text("", size=14)
     axis_info_text = ft.Text("", size=12, color=ft.colors.GREY_700)
 
-    # Axis detection status text (no checkbox - always on when available)
-    axis_status_text = ft.Text("", size=12)
+    axis_model_dropdown = ft.Dropdown(
+        label="Axis Model",
+        value="chartdete",
+        width=200,
+        options=[
+            ft.dropdown.Option("chartdete", "ChartDete"),
+        ],
+    )
 
     model_dropdown = ft.Dropdown(
         label="Line Model",
@@ -667,6 +706,7 @@ def main(page: ft.Page):
         if key == app.current_model_key:
             return
         status_text.value = f"Loading {LINEFORMER_MODELS[key]['name']} model..."
+        status_text.color = None
         progress_ring.visible = True
         page.update()
 
@@ -692,14 +732,45 @@ def main(page: ft.Page):
                     app.load_lineformer_model(key)
 
                 app.raw_lines = None
-                status_text.value = "Model loaded."
+                status_text.value = "Line model loaded."
+                status_text.color = ft.colors.GREEN_700
                 progress_ring.visible = False
                 page.update()
                 if app.current_image is not None:
                     process_image(skip_axis=app.axis_config is not None)
             except Exception as ex:
-                status_text.value = f"Model load failed: {ex}"
+                model_info = LINEFORMER_MODELS[key]
+                ckpt_path = os.path.join(get_models_dir(), model_info["checkpoint"])
+                download_progress.visible = False
                 progress_ring.visible = False
+                if not os.path.exists(ckpt_path):
+                    hf_filename = model_info.get("huggingface_filename", model_info["checkpoint"])
+
+                    def on_import_finetune(_, _key=key):
+                        _model_import_context["mode"] = f"finetune:{_key}"
+                        model_import_picker.pick_files(
+                            allowed_extensions=["pth"],
+                            dialog_title=f"Select {hf_filename}",
+                        )
+
+                    download_help = ft.Column([
+                        ft.Text("Download failed.", color=ft.colors.RED),
+                        ft.Text(f"Download '{hf_filename}' from:", no_wrap=False),
+                        ft.TextButton("HuggingFace", url=HUGGINGFACE_MODELS_URL),
+                        ft.ElevatedButton(
+                            "Import Model",
+                            icon=ft.icons.FILE_UPLOAD,
+                            on_click=on_import_finetune,
+                        ),
+                    ], spacing=5)
+                    clear_download_help()
+                    _download_help_controls.append(download_help)
+                    # Insert after model_dropdown in sidebar
+                    sidebar_controls = settings_panel.content.controls
+                    idx = sidebar_controls.index(model_dropdown) + 1
+                    sidebar_controls.insert(idx, download_help)
+                else:
+                    status_text.value = f"Model load failed: {ex}"
                 page.update()
 
         page.run_thread(switch_model)
@@ -721,8 +792,8 @@ def main(page: ft.Page):
         if app.current_image is None or app.infer_module is None:
             return
 
-        status_text.value = "Extracting lines..."
-        progress_ring.visible = True
+        process_status_text.value = "Extracting lines..."
+        process_progress_ring.visible = True
         page.update()
 
         try:
@@ -743,7 +814,7 @@ def main(page: ft.Page):
                 app.axis_config = None
                 app.ocr_results = None
                 if app.auto_axis and app.chartdete_module is not None:
-                    status_text.value = "Detecting axis labels..."
+                    process_status_text.value = "Detecting axis labels..."
                     page.update()
                     app.axis_config, app.ocr_results = app.detect_axis_calibration(app.current_image)
 
@@ -759,16 +830,16 @@ def main(page: ft.Page):
             else:
                 axis_info_text.value = ""
 
-            status_text.value = "Ready"
-            progress_ring.visible = False
+            process_status_text.value = ""
+            process_progress_ring.visible = False
 
             # Enable export buttons
             export_sd_btn.disabled = False
             export_wpd_btn.disabled = False
 
         except Exception as e:
-            status_text.value = f"Error: {e}"
-            progress_ring.visible = False
+            process_status_text.value = f"Error: {e}"
+            process_progress_ring.visible = False
 
         page.update()
 
@@ -789,7 +860,7 @@ def main(page: ft.Page):
             if img is not None:
                 load_image(img, file_path)
             else:
-                status_text.value = "Failed to read image"
+                process_status_text.value = "Failed to read image"
                 page.update()
 
     def on_keyboard(e: ft.KeyboardEvent):
@@ -814,7 +885,7 @@ def main(page: ft.Page):
             zip_buffer = app.create_starry_digitizer_zip(app.current_image, project_json)
             with open(e.path, 'wb') as f:
                 f.write(zip_buffer.getvalue())
-            status_text.value = f"Saved: {e.path}"
+            process_status_text.value = f"Saved: {e.path}"
             page.update()
 
     def save_wpd_result(e: ft.FilePickerResultEvent):
@@ -824,16 +895,98 @@ def main(page: ft.Page):
             tar_buffer = app.create_wpd_tar(app.current_image, wpd_json, project_name=base_name)
             with open(e.path, 'wb') as f:
                 f.write(tar_buffer.getvalue())
-            status_text.value = f"Saved: {e.path}"
+            process_status_text.value = f"Saved: {e.path}"
             page.update()
 
     save_sd_picker = ft.FilePicker(on_result=save_sd_result)
     save_wpd_picker = ft.FilePicker(on_result=save_wpd_result)
-    page.overlay.extend([save_sd_picker, save_wpd_picker])
+
+    # Model import file picker
+    import shutil
+    _model_import_context = {"mode": None}  # "startup" or "finetune:<key>"
+    _download_help_controls = []  # Track help UI elements for cleanup
+
+    def clear_download_help():
+        """Remove all download help UI elements from sidebar."""
+        sidebar_controls = settings_panel.content.controls
+        for ctrl in _download_help_controls:
+            if ctrl in sidebar_controls:
+                sidebar_controls.remove(ctrl)
+            if ctrl in main_content.controls:
+                main_content.controls.remove(ctrl)
+        _download_help_controls.clear()
+
+    def import_model_result(e: ft.FilePickerResultEvent):
+        if not e.files:
+            return
+        models_dir = get_models_dir()
+        mode = _model_import_context.get("mode")
+
+        if mode == "startup":
+            # Import base models (iter_3000.pth, checkpoint.pth)
+            for f in e.files:
+                src = f.path
+                fname = os.path.basename(src)
+                if fname in MODEL_FILES:
+                    ok, _ = verify_model_hash(src, fname)
+                    if not ok:
+                        status_text.value = f"Invalid file: '{fname}' is not the expected model."
+                        status_text.visible = True
+                        page.update()
+                        return
+                    shutil.copy2(src, os.path.join(models_dir, fname))
+            missing = check_models_exist()
+            if not missing:
+                status_text.value = "Models imported. Loading..."
+                status_text.visible = True
+                clear_download_help()
+                page.update()
+                page.run_thread(load_models_async)
+            else:
+                status_text.value = f"Still missing: {', '.join(missing)}"
+                status_text.visible = True
+                page.update()
+
+        elif mode and mode.startswith("finetune:"):
+            model_key = mode.split(":", 1)[1]
+            model_info = LINEFORMER_MODELS[model_key]
+            if e.files:
+                src = e.files[0].path
+                dest = os.path.join(models_dir, model_info["checkpoint"])
+                ok, _ = verify_model_hash(src, model_info["checkpoint"])
+                if not ok:
+                    status_text.value = f"Invalid file. Expected '{model_info['checkpoint']}'."
+                    status_text.visible = True
+                    page.update()
+                    return
+                shutil.copy2(src, dest)
+                status_text.value = f"Model imported. Loading {model_info['name']}..."
+                status_text.visible = True
+                clear_download_help()
+                page.update()
+
+                def load_imported():
+                    try:
+                        app.load_lineformer_model(model_key)
+                        app.raw_lines = None
+                        status_text.value = "Line model loaded."
+                        status_text.color = ft.colors.GREEN_700
+                        progress_ring.visible = False
+                        page.update()
+                        if app.current_image is not None:
+                            process_image(skip_axis=app.axis_config is not None)
+                    except Exception as ex:
+                        status_text.value = f"Model load failed: {ex}"
+                        progress_ring.visible = False
+                        page.update()
+                page.run_thread(load_imported)
+
+    model_import_picker = ft.FilePicker(on_result=import_model_result)
+    page.overlay.extend([save_sd_picker, save_wpd_picker, model_import_picker])
 
     # Buttons
     upload_btn = ft.ElevatedButton(
-        "Open Image",
+        "Open Image (or Cmd+V)",
         icon=ft.icons.FOLDER_OPEN,
         on_click=lambda _: file_picker.pick_files(
             allowed_extensions=["png", "jpg", "jpeg", "bmp", "tiff"]
@@ -866,6 +1019,9 @@ def main(page: ft.Page):
             ft.Text("Settings", size=18, weight=ft.FontWeight.BOLD),
             ft.Divider(),
             model_dropdown,
+            ft.Row([progress_ring, status_text], spacing=5),
+            axis_model_dropdown,
+            axis_status_text,
             sort_dropdown,
             ft.Divider(),
             downsample_dropdown,
@@ -898,18 +1054,16 @@ def main(page: ft.Page):
         padding=10,
         bgcolor=ft.colors.GREY_100,
         border_radius=10,
-        expand=True,
     )
 
-    paste_hint = ft.Text("or Cmd+V to paste", size=12, color=ft.colors.GREY_500)
+    process_status_text = ft.Text("", size=12)
+    process_progress_ring = ft.ProgressRing(visible=False, width=16, height=16)
 
     main_content = ft.Column([
         ft.Row([
             upload_btn,
-            paste_hint,
-            progress_ring,
-            status_text,
-            axis_status_text,
+            process_progress_ring,
+            process_status_text,
         ], alignment=ft.MainAxisAlignment.START),
         ft.Divider(),
         ft.Row([
@@ -934,11 +1088,11 @@ def main(page: ft.Page):
         ], expand=True)
     )
 
-    # Download progress bar
-    download_progress = ft.ProgressBar(visible=False, width=400)
-
-    # Insert progress bar into the layout (after status_text row)
-    main_content.controls.insert(1, download_progress)
+    # Download progress bar (inserted after model_dropdown row in sidebar)
+    download_progress = ft.ProgressBar(visible=False, width=200)
+    sidebar_controls = settings_panel.content.controls
+    _status_row_idx = sidebar_controls.index(axis_model_dropdown)
+    sidebar_controls.insert(_status_row_idx, download_progress)
 
     # Load models on startup
     def load_models_async():
@@ -962,40 +1116,79 @@ def main(page: ft.Page):
                     try:
                         download_model(filename, models_dir, progress_callback=on_progress)
                     except Exception as e:
-                        status_text.value = f"Download failed: {e}"
                         download_progress.visible = False
                         progress_ring.visible = False
+
+                        def on_import_startup(_):
+                            _model_import_context["mode"] = "startup"
+                            model_import_picker.pick_files(
+                                allow_multiple=True,
+                                allowed_extensions=["pth"],
+                                dialog_title="Select model files (iter_3000.pth, checkpoint.pth)",
+                            )
+
+                        download_help = ft.Column([
+                            ft.Text("Auto-download failed.", color=ft.colors.RED),
+                            ft.Text("1. Download from:", no_wrap=False),
+                            ft.TextButton("GitHub Releases", url=GITHUB_MODELS_URL),
+                            ft.Text("2. Import models:", no_wrap=False),
+                            ft.ElevatedButton(
+                                "Import Models",
+                                icon=ft.icons.FILE_UPLOAD,
+                                on_click=on_import_startup,
+                            ),
+                            ft.Text("(select iter_3000.pth and checkpoint.pth)", size=11, no_wrap=False, color=ft.colors.GREY_600),
+                        ], spacing=5)
+                        _download_help_controls.append(download_help)
+                        sidebar_controls = settings_panel.content.controls
+                        idx = sidebar_controls.index(model_dropdown) + 1
+                        sidebar_controls.insert(idx, download_help)
                         page.update()
                         return
 
                 download_progress.visible = False
                 page.update()
 
-            status_text.value = "Loading LineFormer..."
+            # Load LineFormer
+            status_text.value = "Loading..."
+            axis_status_text.value = ""
             page.update()
-            app.load_lineformer_model()
 
-            # Check if ChartDete is available
+            try:
+                app.load_lineformer_model()
+                status_text.value = "Line model loaded."
+                status_text.color = ft.colors.GREEN_700
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                status_text.value = f"Failed: {e}"
+                status_text.color = ft.colors.RED_700
+            progress_ring.visible = False
+            page.update()
+
+            # Load ChartDete
+            axis_status_text.value = "Loading..."
+            page.update()
+
             if not CHARTDETE_AVAILABLE:
                 app.auto_axis = False
-                axis_status_text.value = "Axis detection: Not available"
+                axis_status_text.value = "Not available"
                 axis_status_text.color = ft.colors.ORANGE_700
             else:
-                status_text.value = "Loading ChartDete..."
-                page.update()
                 try:
                     app.load_chartdete_model()
-                    axis_status_text.value = "Axis detection: Ready"
+                    axis_status_text.value = "Axis model loaded."
                     axis_status_text.color = ft.colors.GREEN_700
                 except Exception as e:
+                    import traceback
+                    traceback.print_exc()
                     app.auto_axis = False
-                    axis_status_text.value = f"Axis detection: Failed ({str(e)[:30]})"
+                    axis_status_text.value = f"Failed: {e}"
                     axis_status_text.color = ft.colors.RED_700
 
-            status_text.value = "Models loaded. Open an image to start."
-            progress_ring.visible = False
         except Exception as e:
-            status_text.value = f"Failed to load models: {e}"
+            status_text.value = f"Failed: {e}"
+            status_text.color = ft.colors.RED_700
             progress_ring.visible = False
         page.update()
 
