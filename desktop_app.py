@@ -58,10 +58,18 @@ from pathlib import Path
 GITHUB_REPO = "t29mato/AutoLineDigitizer"
 GITHUB_RELEASE_TAG = "models"
 
-# Model files to download
+# Model files to download (filename -> display name)
 MODEL_FILES = {
     "iter_3000.pth": "LineFormer",
     "checkpoint.pth": "ChartDete",
+}
+
+# SHA256 hashes for model validation (first 16 hex chars)
+MODEL_HASHES = {
+    "iter_3000.pth": "ac03d7d52a11ce25",
+    "checkpoint.pth": "aef812b0e37faf7c",
+    "lineformer_battery_iter_5000.pth": "587f492d381674bd",
+    "lineformer_battery_best_iter_1300.pth": "e3189abf87a7bff7",
 }
 
 # HuggingFace repository for fine-tuned models
@@ -75,15 +83,13 @@ LINEFORMER_MODELS = {
     },
     "battery_iter5000": {
         "name": "Battery (iter_5000)",
-        "checkpoint": "battery_iter_5000.pth",
-        "huggingface_filename": "iter_5000.pth",
-        "github_filename": "battery_iter_5000.pth",
+        "checkpoint": "lineformer_battery_iter_5000.pth",
+        "huggingface_filename": "lineformer_battery_iter_5000.pth",
     },
-    "battery_best_segm": {
-        "name": "Battery (best_segm)",
-        "checkpoint": "battery_best_segm_mAP_iter_1300.pth",
-        "huggingface_filename": "best_segm_mAP_iter_1300.pth",
-        "github_filename": "battery_best_segm_mAP_iter_1300.pth",
+    "battery_best": {
+        "name": "Battery (best)",
+        "checkpoint": "lineformer_battery_best_iter_1300.pth",
+        "huggingface_filename": "lineformer_battery_best_iter_1300.pth",
     },
 }
 
@@ -114,6 +120,23 @@ def check_models_exist():
         if not os.path.exists(os.path.join(models_dir, filename)):
             missing.append(filename)
     return missing
+
+
+def verify_model_hash(file_path, expected_filename):
+    """Verify a model file's SHA256 hash. Returns (ok, actual_hash_prefix)."""
+    import hashlib
+    expected = MODEL_HASHES.get(expected_filename)
+    if not expected:
+        return True, ""  # No hash registered, skip check
+    h = hashlib.sha256()
+    with open(file_path, 'rb') as f:
+        while True:
+            chunk = f.read(1024 * 1024)
+            if not chunk:
+                break
+            h.update(chunk)
+    actual = h.hexdigest()[:16]
+    return actual == expected, actual
 
 
 def download_file(url, dest_path, progress_callback=None):
@@ -157,22 +180,10 @@ def download_model(filename, models_dir, progress_callback=None):
 
 
 def download_finetuned_model(model_info, dest_path, progress_callback=None):
-    """Download a fine-tuned model. Tries HuggingFace first, falls back to GitHub Releases."""
+    """Download a fine-tuned model from HuggingFace."""
     hf_filename = model_info.get("huggingface_filename")
-    github_filename = model_info.get("github_filename")
-
-    # Try HuggingFace first
     if hf_filename:
-        try:
-            url = f"https://huggingface.co/{HUGGINGFACE_REPO}/resolve/main/{hf_filename}"
-            download_file(url, dest_path, progress_callback)
-            return
-        except Exception:
-            pass  # Fall through to GitHub
-
-    # Fallback to GitHub Releases
-    if github_filename:
-        url = f"https://github.com/{GITHUB_REPO}/releases/download/{GITHUB_RELEASE_TAG}/{github_filename}"
+        url = f"https://huggingface.co/{HUGGINGFACE_REPO}/resolve/main/{hf_filename}"
         download_file(url, dest_path, progress_callback)
 
 
@@ -203,8 +214,8 @@ class LineFormerApp:
             self.current_model_key = model_key
         model_info = LINEFORMER_MODELS[self.current_model_key]
         ckpt = os.path.join(get_models_dir(), model_info["checkpoint"])
-        # Download if not present (tries HuggingFace first, falls back to GitHub)
-        if not os.path.exists(ckpt) and ("huggingface_filename" in model_info or "github_filename" in model_info):
+        # Download if not present
+        if not os.path.exists(ckpt) and "huggingface_filename" in model_info:
             download_finetuned_model(model_info, ckpt, progress_callback)
         CONFIG = os.path.join(LINEFORMER_DIR, "lineformer_swin_t_config.py")
         DEVICE = "cpu"
@@ -745,6 +756,8 @@ def main(page: ft.Page):
                             on_click=on_import_finetune,
                         ),
                     ], spacing=5)
+                    clear_download_help()
+                    _download_help_controls.append(download_help)
                     if len(main_content.controls) > 1:
                         main_content.controls.insert(1, download_help)
                 else:
@@ -882,6 +895,14 @@ def main(page: ft.Page):
     # Model import file picker
     import shutil
     _model_import_context = {"mode": None}  # "startup" or "finetune:<key>"
+    _download_help_controls = []  # Track help UI elements for cleanup
+
+    def clear_download_help():
+        """Remove all download help UI elements from main_content."""
+        for ctrl in _download_help_controls:
+            if ctrl in main_content.controls:
+                main_content.controls.remove(ctrl)
+        _download_help_controls.clear()
 
     def import_model_result(e: ft.FilePickerResultEvent):
         if not e.files:
@@ -891,19 +912,22 @@ def main(page: ft.Page):
 
         if mode == "startup":
             # Import base models (iter_3000.pth, checkpoint.pth)
-            imported = []
             for f in e.files:
                 src = f.path
                 fname = os.path.basename(src)
                 if fname in MODEL_FILES:
+                    ok, _ = verify_model_hash(src, fname)
+                    if not ok:
+                        status_text.value = f"Invalid file: '{fname}' is not the expected model."
+                        status_text.visible = True
+                        page.update()
+                        return
                     shutil.copy2(src, os.path.join(models_dir, fname))
-                    imported.append(fname)
             missing = check_models_exist()
             if not missing:
                 status_text.value = "Models imported. Loading..."
                 status_text.visible = True
-                # Remove download help UI
-                main_content.controls[:] = [c for c in main_content.controls if not isinstance(c, ft.Column) or c == main_content.controls[-1]]
+                clear_download_help()
                 page.update()
                 page.run_thread(load_models_async)
             else:
@@ -917,13 +941,16 @@ def main(page: ft.Page):
             if e.files:
                 src = e.files[0].path
                 dest = os.path.join(models_dir, model_info["checkpoint"])
+                ok, _ = verify_model_hash(src, model_info["checkpoint"])
+                if not ok:
+                    status_text.value = f"Invalid file. Expected '{model_info['checkpoint']}'."
+                    status_text.visible = True
+                    page.update()
+                    return
                 shutil.copy2(src, dest)
                 status_text.value = f"Model imported. Loading {model_info['name']}..."
                 status_text.visible = True
-                # Remove download help UI
-                main_content.controls[:] = [c for c in main_content.controls
-                                            if not (isinstance(c, ft.Row) and any(
-                                                isinstance(child, ft.TextButton) for child in getattr(c, 'controls', [])))]
+                clear_download_help()
                 page.update()
 
                 def load_imported():
@@ -1102,6 +1129,7 @@ def main(page: ft.Page):
                                 ft.Text("(select iter_3000.pth and checkpoint.pth)"),
                             ], spacing=5),
                         ], spacing=5)
+                        _download_help_controls.append(download_help)
                         main_content.controls.insert(0, download_help)
                         page.update()
                         return
