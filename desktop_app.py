@@ -7,7 +7,6 @@ Automatic axis detection using ChartDete + OCR.
 
 import sys
 import os
-import ssl
 
 APP_VERSION = "dev"
 
@@ -16,13 +15,7 @@ APP_VERSION = "dev"
 if getattr(sys, 'frozen', False):
     # Running as PyInstaller bundle
     SCRIPT_DIR = sys._MEIPASS
-    # Fix SSL certificates for bundled app
-    import certifi
-    os.environ['SSL_CERT_FILE'] = certifi.where()
-    os.environ['REQUESTS_CA_BUNDLE'] = certifi.where()
-    _ssl_context = ssl.create_default_context(cafile=certifi.where())
 else:
-    _ssl_context = None
     # Running as normal script
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -128,7 +121,7 @@ def download_file(url, dest_path, progress_callback=None):
     tmp_path = dest_path + '.tmp'
 
     req = urllib.request.Request(url)
-    with urllib.request.urlopen(req, context=_ssl_context) as response:
+    with urllib.request.urlopen(req) as response:
         total_size = int(response.headers.get('Content-Length', 0))
         downloaded = 0
         block_size = 1024 * 1024  # 1MB
