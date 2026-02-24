@@ -117,11 +117,21 @@ def check_models_exist():
 
 
 def download_file(url, dest_path, progress_callback=None):
-    """Download a file from a URL."""
+    """Download a file from a URL. Falls back to unverified SSL if needed (corporate proxy)."""
+    import ssl
     tmp_path = dest_path + '.tmp'
 
     req = urllib.request.Request(url)
-    with urllib.request.urlopen(req) as response:
+    try:
+        response_ctx = urllib.request.urlopen(req)
+    except urllib.error.URLError:
+        # SSL verification failed (e.g., corporate proxy with SSL inspection)
+        # Fall back to unverified context for trusted download sources
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        response_ctx = urllib.request.urlopen(req, context=ctx)
+    with response_ctx as response:
         total_size = int(response.headers.get('Content-Length', 0))
         downloaded = 0
         block_size = 1024 * 1024  # 1MB
