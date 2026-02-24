@@ -84,11 +84,13 @@ LINEFORMER_MODELS = {
         "name": "Battery (iter_5000)",
         "checkpoint": "battery_iter_5000.pth",
         "huggingface_filename": "iter_5000.pth",
+        "github_filename": "battery_iter_5000.pth",
     },
     "battery_best_segm": {
         "name": "Battery (best_segm)",
         "checkpoint": "battery_best_segm_mAP_iter_1300.pth",
         "huggingface_filename": "best_segm_mAP_iter_1300.pth",
+        "github_filename": "battery_best_segm_mAP_iter_1300.pth",
     },
 }
 
@@ -150,10 +152,24 @@ def download_model(filename, models_dir, progress_callback=None):
     download_file(url, os.path.join(models_dir, filename), progress_callback)
 
 
-def download_huggingface_model(hf_filename, dest_path, progress_callback=None):
-    """Download a model file from HuggingFace."""
-    url = f"https://huggingface.co/{HUGGINGFACE_REPO}/resolve/main/{hf_filename}"
-    download_file(url, dest_path, progress_callback)
+def download_finetuned_model(model_info, dest_path, progress_callback=None):
+    """Download a fine-tuned model. Tries HuggingFace first, falls back to GitHub Releases."""
+    hf_filename = model_info.get("huggingface_filename")
+    github_filename = model_info.get("github_filename")
+
+    # Try HuggingFace first
+    if hf_filename:
+        try:
+            url = f"https://huggingface.co/{HUGGINGFACE_REPO}/resolve/main/{hf_filename}"
+            download_file(url, dest_path, progress_callback)
+            return
+        except Exception:
+            pass  # Fall through to GitHub
+
+    # Fallback to GitHub Releases
+    if github_filename:
+        url = f"https://github.com/{GITHUB_REPO}/releases/download/{GITHUB_RELEASE_TAG}/{github_filename}"
+        download_file(url, dest_path, progress_callback)
 
 
 class LineFormerApp:
@@ -183,11 +199,9 @@ class LineFormerApp:
             self.current_model_key = model_key
         model_info = LINEFORMER_MODELS[self.current_model_key]
         ckpt = os.path.join(get_models_dir(), model_info["checkpoint"])
-        # Download from HuggingFace if not present
-        if not os.path.exists(ckpt) and "huggingface_filename" in model_info:
-            download_huggingface_model(
-                model_info["huggingface_filename"], ckpt, progress_callback
-            )
+        # Download if not present (tries HuggingFace first, falls back to GitHub)
+        if not os.path.exists(ckpt) and ("huggingface_filename" in model_info or "github_filename" in model_info):
+            download_finetuned_model(model_info, ckpt, progress_callback)
         CONFIG = os.path.join(LINEFORMER_DIR, "lineformer_swin_t_config.py")
         DEVICE = "cpu"
         infer.load_model(CONFIG, ckpt, DEVICE)
