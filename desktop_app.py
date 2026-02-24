@@ -121,16 +121,15 @@ def download_file(url, dest_path, progress_callback=None):
     import ssl
     tmp_path = dest_path + '.tmp'
 
-    req = urllib.request.Request(url)
+    # Try with default SSL first, fall back to unverified for corporate proxies
+    ctx = ssl.create_default_context()
     try:
-        response_ctx = urllib.request.urlopen(req)
-    except urllib.error.URLError:
-        # SSL verification failed (e.g., corporate proxy with SSL inspection)
-        # Fall back to unverified context for trusted download sources
+        response_ctx = urllib.request.urlopen(urllib.request.Request(url), context=ctx)
+    except Exception:
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
-        response_ctx = urllib.request.urlopen(req, context=ctx)
+        response_ctx = urllib.request.urlopen(urllib.request.Request(url), context=ctx)
     with response_ctx as response:
         total_size = int(response.headers.get('Content-Length', 0))
         downloaded = 0
