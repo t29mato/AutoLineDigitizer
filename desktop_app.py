@@ -600,8 +600,9 @@ def main(page: ft.Page):
     app = LineFormerApp()
 
     # UI Components
-    status_text = ft.Text("Loading models...", size=14)
-    progress_ring = ft.ProgressRing(visible=True, width=20, height=20)
+    status_text = ft.Text("Loading...", size=12, no_wrap=False, expand=True)
+    progress_ring = ft.ProgressRing(visible=True, width=16, height=16)
+    axis_status_text = ft.Text("Loading...", size=12, no_wrap=False)
 
     input_image = ft.Image(visible=False, fit=ft.ImageFit.FIT_WIDTH)
     result_image = ft.Image(visible=False, fit=ft.ImageFit.FIT_WIDTH)
@@ -609,8 +610,14 @@ def main(page: ft.Page):
     info_text = ft.Text("", size=14)
     axis_info_text = ft.Text("", size=12, color=ft.colors.GREY_700)
 
-    # Axis detection status text (no checkbox - always on when available)
-    axis_status_text = ft.Text("", size=12)
+    axis_model_dropdown = ft.Dropdown(
+        label="Axis Model",
+        value="chartdete",
+        width=200,
+        options=[
+            ft.dropdown.Option("chartdete", "ChartDete"),
+        ],
+    )
 
     model_dropdown = ft.Dropdown(
         label="Line Model",
@@ -699,6 +706,7 @@ def main(page: ft.Page):
         if key == app.current_model_key:
             return
         status_text.value = f"Loading {LINEFORMER_MODELS[key]['name']} model..."
+        status_text.color = None
         progress_ring.visible = True
         page.update()
 
@@ -724,7 +732,8 @@ def main(page: ft.Page):
                     app.load_lineformer_model(key)
 
                 app.raw_lines = None
-                status_text.value = "Model loaded."
+                status_text.value = "Line model loaded."
+                status_text.color = ft.colors.GREEN_700
                 progress_ring.visible = False
                 page.update()
                 if app.current_image is not None:
@@ -736,7 +745,6 @@ def main(page: ft.Page):
                 progress_ring.visible = False
                 if not os.path.exists(ckpt_path):
                     hf_filename = model_info.get("huggingface_filename", model_info["checkpoint"])
-                    status_text.value = "Download failed."
 
                     def on_import_finetune(_, _key=key):
                         _model_import_context["mode"] = f"finetune:{_key}"
@@ -746,6 +754,7 @@ def main(page: ft.Page):
                         )
 
                     download_help = ft.Column([
+                        ft.Text("Download failed.", color=ft.colors.RED),
                         ft.Row([
                             ft.Text(f"Download '{hf_filename}' from"),
                             ft.TextButton("HuggingFace", url=HUGGINGFACE_MODELS_URL),
@@ -758,8 +767,10 @@ def main(page: ft.Page):
                     ], spacing=5)
                     clear_download_help()
                     _download_help_controls.append(download_help)
-                    if len(main_content.controls) > 1:
-                        main_content.controls.insert(1, download_help)
+                    # Insert after model_dropdown in sidebar
+                    sidebar_controls = settings_panel.content.controls
+                    idx = sidebar_controls.index(model_dropdown) + 1
+                    sidebar_controls.insert(idx, download_help)
                 else:
                     status_text.value = f"Model load failed: {ex}"
                 page.update()
@@ -821,7 +832,7 @@ def main(page: ft.Page):
             else:
                 axis_info_text.value = ""
 
-            status_text.value = "Ready"
+            status_text.value = ""
             progress_ring.visible = False
 
             # Enable export buttons
@@ -898,8 +909,11 @@ def main(page: ft.Page):
     _download_help_controls = []  # Track help UI elements for cleanup
 
     def clear_download_help():
-        """Remove all download help UI elements from main_content."""
+        """Remove all download help UI elements from sidebar."""
+        sidebar_controls = settings_panel.content.controls
         for ctrl in _download_help_controls:
+            if ctrl in sidebar_controls:
+                sidebar_controls.remove(ctrl)
             if ctrl in main_content.controls:
                 main_content.controls.remove(ctrl)
         _download_help_controls.clear()
@@ -957,7 +971,8 @@ def main(page: ft.Page):
                     try:
                         app.load_lineformer_model(model_key)
                         app.raw_lines = None
-                        status_text.value = "Model loaded."
+                        status_text.value = "Line model loaded."
+                        status_text.color = ft.colors.GREEN_700
                         progress_ring.visible = False
                         page.update()
                         if app.current_image is not None:
@@ -1006,6 +1021,9 @@ def main(page: ft.Page):
             ft.Text("Settings", size=18, weight=ft.FontWeight.BOLD),
             ft.Divider(),
             model_dropdown,
+            ft.Row([progress_ring, status_text], spacing=5),
+            axis_model_dropdown,
+            axis_status_text,
             sort_dropdown,
             ft.Divider(),
             downsample_dropdown,
@@ -1046,9 +1064,6 @@ def main(page: ft.Page):
         ft.Row([
             upload_btn,
             paste_hint,
-            progress_ring,
-            status_text,
-            axis_status_text,
         ], alignment=ft.MainAxisAlignment.START),
         ft.Divider(),
         ft.Row([
@@ -1073,11 +1088,11 @@ def main(page: ft.Page):
         ], expand=True)
     )
 
-    # Download progress bar
-    download_progress = ft.ProgressBar(visible=False, width=400)
-
-    # Insert progress bar into the layout (after status_text row)
-    main_content.controls.insert(1, download_progress)
+    # Download progress bar (inserted after model_dropdown row in sidebar)
+    download_progress = ft.ProgressBar(visible=False, width=200)
+    sidebar_controls = settings_panel.content.controls
+    _status_row_idx = sidebar_controls.index(axis_model_dropdown)
+    sidebar_controls.insert(_status_row_idx, download_progress)
 
     # Load models on startup
     def load_models_async():
@@ -1103,7 +1118,6 @@ def main(page: ft.Page):
                     except Exception as e:
                         download_progress.visible = False
                         progress_ring.visible = False
-                        status_text.value = "Auto-download failed."
 
                         def on_import_startup(_):
                             _model_import_context["mode"] = "startup"
@@ -1114,7 +1128,7 @@ def main(page: ft.Page):
                             )
 
                         download_help = ft.Column([
-                            ft.Text("Please download models and import:"),
+                            ft.Text("Auto-download failed.", color=ft.colors.RED),
                             ft.Row([
                                 ft.Text("1. Download from"),
                                 ft.TextButton("GitHub Releases", url=GITHUB_MODELS_URL),
@@ -1130,38 +1144,71 @@ def main(page: ft.Page):
                             ], spacing=5),
                         ], spacing=5)
                         _download_help_controls.append(download_help)
-                        main_content.controls.insert(0, download_help)
+                        sidebar_controls = settings_panel.content.controls
+                        idx = sidebar_controls.index(model_dropdown) + 1
+                        sidebar_controls.insert(idx, download_help)
                         page.update()
                         return
 
                 download_progress.visible = False
                 page.update()
 
-            status_text.value = "Loading LineFormer..."
-            page.update()
-            app.load_lineformer_model()
+            import threading
 
-            # Check if ChartDete is available
-            if not CHARTDETE_AVAILABLE:
-                app.auto_axis = False
-                axis_status_text.value = "Axis detection: Not available"
-                axis_status_text.color = ft.colors.ORANGE_700
-            else:
-                status_text.value = "Loading ChartDete..."
-                page.update()
+            line_error = [None]
+            axis_error = [None]
+
+            def load_lineformer():
+                try:
+                    app.load_lineformer_model()
+                except Exception as e:
+                    line_error[0] = e
+
+            def load_chartdete():
+                if not CHARTDETE_AVAILABLE:
+                    app.auto_axis = False
+                    axis_error[0] = "Not available"
+                    return
                 try:
                     app.load_chartdete_model()
-                    axis_status_text.value = "Axis detection: Ready"
-                    axis_status_text.color = ft.colors.GREEN_700
                 except Exception as e:
                     app.auto_axis = False
-                    axis_status_text.value = f"Axis detection: Failed ({str(e)[:30]})"
-                    axis_status_text.color = ft.colors.RED_700
+                    axis_error[0] = e
 
-            status_text.value = "Models loaded. Open an image to start."
+            status_text.value = "Loading..."
+            axis_status_text.value = "Loading..."
+            page.update()
+
+            t1 = threading.Thread(target=load_lineformer)
+            t2 = threading.Thread(target=load_chartdete)
+            t1.start()
+            t2.start()
+            t1.join()
+            t2.join()
+
+            # Line model result
+            if line_error[0]:
+                status_text.value = f"Failed: {line_error[0]}"
+                status_text.color = ft.colors.RED_700
+            else:
+                status_text.value = "Line model loaded."
+                status_text.color = ft.colors.GREEN_700
             progress_ring.visible = False
+
+            # Axis model result
+            if axis_error[0] == "Not available":
+                axis_status_text.value = "Not available"
+                axis_status_text.color = ft.colors.ORANGE_700
+            elif axis_error[0]:
+                axis_status_text.value = f"Failed: {str(axis_error[0])[:30]}"
+                axis_status_text.color = ft.colors.RED_700
+            else:
+                axis_status_text.value = "Axis model loaded."
+                axis_status_text.color = ft.colors.GREEN_700
+
         except Exception as e:
-            status_text.value = f"Failed to load models: {e}"
+            status_text.value = f"Failed: {e}"
+            status_text.color = ft.colors.RED_700
             progress_ring.visible = False
         page.update()
 
