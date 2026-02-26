@@ -299,8 +299,42 @@ class LineFormerApp:
                 return points
             step = max(1, len(points) // self.max_points)
             return points[::step]
+        elif self.downsample_mode == "arc_length":
+            if len(points) <= self.max_points:
+                return points
+            return self._arc_length_resample(points, self.max_points)
 
         return points
+
+    def _arc_length_resample(self, points, n_points):
+        """Resample at equidistant intervals along the pixel-space arc length.
+
+        Uses raw pixel coordinates for distance so that both X and Y
+        movement contribute proportionally to visual distance on screen.
+        Steep vertical sections naturally receive more points because
+        their pixel arc length is large.
+        """
+        pts = np.array(points, dtype=float)
+        diffs = np.diff(pts, axis=0)
+        seg_lengths = np.sqrt((diffs ** 2).sum(axis=1))
+        cum_arc = np.zeros(len(pts))
+        cum_arc[1:] = np.cumsum(seg_lengths)
+        total_length = cum_arc[-1]
+        if total_length == 0:
+            return [points[0]]
+
+        target_distances = np.linspace(0, total_length, n_points)
+        result = []
+        seg_idx = 0
+        for d in target_distances:
+            while seg_idx < len(seg_lengths) - 1 and cum_arc[seg_idx + 1] < d:
+                seg_idx += 1
+            seg_span = cum_arc[seg_idx + 1] - cum_arc[seg_idx]
+            t = 0.0 if seg_span == 0 else (d - cum_arc[seg_idx]) / seg_span
+            x = pts[seg_idx, 0] + t * (pts[seg_idx + 1, 0] - pts[seg_idx, 0])
+            y = pts[seg_idx, 1] + t * (pts[seg_idx + 1, 1] - pts[seg_idx, 1])
+            result.append([int(round(x)), int(round(y))])
+        return result
 
     def sort_data_series(self, data_series):
         """Sort data series based on mode."""
@@ -646,6 +680,7 @@ def main(page: ft.Page):
         width=200,
         options=[
             ft.dropdown.Option("max_points", "Max Points"),
+            ft.dropdown.Option("arc_length", "Arc Length"),
             ft.dropdown.Option("fixed", "Fixed Step"),
             ft.dropdown.Option("none", "None"),
         ],
@@ -678,8 +713,9 @@ def main(page: ft.Page):
 
     def on_downsample_change(e):
         app.downsample_mode = downsample_dropdown.value
-        max_points_label.visible = downsample_dropdown.value == "max_points"
-        max_points_slider.visible = downsample_dropdown.value == "max_points"
+        show_max_points = downsample_dropdown.value in ("max_points", "arc_length")
+        max_points_label.visible = show_max_points
+        max_points_slider.visible = show_max_points
         fixed_step_label.visible = downsample_dropdown.value == "fixed"
         fixed_step_slider.visible = downsample_dropdown.value == "fixed"
         page.update()
