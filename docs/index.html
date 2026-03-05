@@ -6,7 +6,7 @@
 
     <!-- SEO Meta Tags -->
     <meta name="description" content="Automatic line chart data extraction desktop application using LineFormer, ChartDete, and EasyOCR for precise axis detection and data digitization.">
-    <meta name="keywords" content="chart digitizer, data extraction, LineFormer, plot digitizer, graph digitizer, OCR, scientific data">
+    <meta name="keywords" content="chart digitizer, plot digitizer, graph digitizer, webplotdigitizer alternative, automatic chart data extraction, line chart digitizer, data extraction from graphs, digitize plot, extract data from chart, chart to data, plot to csv, graph to data, LineFormer, scientific data extraction, meta-analysis tools, research data extraction, automatic plot digitizer, AI chart digitizer, ChartDete, EasyOCR, batch chart processing">
     <meta name="author" content="AutoLineDigitizer">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://t29mato.github.io/AutoLineDigitizer/">
@@ -336,6 +336,156 @@
             text-decoration: underline;
         }
 
+        .comparison-table {
+            max-width: 1000px;
+            margin: 40px auto;
+            overflow-x: auto;
+        }
+
+        .comparison-table table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .comparison-table th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .comparison-table tr:hover {
+            background: #f7fafc;
+        }
+
+        .workflow-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 30px auto;
+            max-width: 800px;
+            border-radius: 8px;
+        }
+
+        .workflow-box h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .workflow-box ol {
+            margin-left: 20px;
+        }
+
+        .workflow-box li {
+            margin-bottom: 10px;
+        }
+
+        .use-cases {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .use-case-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-top: 4px solid #667eea;
+        }
+
+        .use-case-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .use-case-card blockquote {
+            font-style: italic;
+            color: #4a5568;
+            border-left: 3px solid #e2e8f0;
+            padding-left: 15px;
+            margin: 15px 0;
+        }
+
+        .faq-section {
+            max-width: 900px;
+            margin: 40px auto;
+        }
+
+        .faq-item {
+            background: white;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        .faq-item h3 {
+            color: #2d3748;
+            margin-bottom: 12px;
+            font-size: 1.2em;
+        }
+
+        .faq-item p {
+            color: #4a5568;
+            line-height: 1.8;
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .tech-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .tech-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .tech-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .tech-card li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .tech-card li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+
         @media (max-width: 768px) {
             header h1 {
                 font-size: 2em;
@@ -356,6 +506,15 @@
             .lang-switcher {
                 top: 10px;
                 right: 10px;
+            }
+
+            .comparison-table {
+                font-size: 0.9em;
+            }
+
+            .use-cases,
+            .tech-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -488,6 +647,174 @@
         </div>
     </section>
 
+    <!-- Comparison Section -->
+    <section>
+        <div class="container">
+            <h2 data-i18n="comparison.title">WebPlotDigitizer vs AutoLineDigitizer</h2>
+
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="comparison.feature">Feature</th>
+                            <th>WebPlotDigitizer</th>
+                            <th>AutoLineDigitizer</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td data-i18n="comparison.line_detection">Line Detection</td>
+                            <td data-i18n="comparison.wpd_line">Manual clicking</td>
+                            <td data-i18n="comparison.ald_line">AI automatic</td>
+                        </tr>
+                        <tr>
+                            <td data-i18n="comparison.axis_calibration">Axis Calibration</td>
+                            <td data-i18n="comparison.wpd_axis">Manual input</td>
+                            <td data-i18n="comparison.ald_axis">OCR automatic</td>
+                        </tr>
+                        <tr>
+                            <td data-i18n="comparison.time">Speed</td>
+                            <td data-i18n="comparison.wpd_time">Manual</td>
+                            <td data-i18n="comparison.ald_time">Fast</td>
+                        </tr>
+                        <tr>
+                            <td data-i18n="comparison.precision">Precision</td>
+                            <td data-i18n="comparison.wpd_precision">Very high</td>
+                            <td data-i18n="comparison.ald_precision">Good</td>
+                        </tr>
+                        <tr>
+                            <td data-i18n="comparison.complex_plots">Complex plots</td>
+                            <td data-i18n="comparison.wpd_complex">Excellent</td>
+                            <td data-i18n="comparison.ald_complex">Basic</td>
+                        </tr>
+                        <tr>
+                            <td data-i18n="comparison.best_for">Best for</td>
+                            <td data-i18n="comparison.wpd_best">All chart types</td>
+                            <td data-i18n="comparison.ald_best">Line charts</td>
+                        </tr>
+                        <tr>
+                            <td data-i18n="comparison.platform">Platform</td>
+                            <td>Web</td>
+                            <td>Desktop (macOS/Windows)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="workflow-box">
+                <h3 data-i18n="comparison.workflow_title">Recommended Workflow: Use Both!</h3>
+                <ol>
+                    <li data-i18n="comparison.workflow_step1">Auto-extract lines and axes with AutoLineDigitizer</li>
+                    <li data-i18n="comparison.workflow_step2">Export to WebPlotDigitizer TAR format</li>
+                    <li data-i18n="comparison.workflow_step3">Import into WebPlotDigitizer for refinement and verification</li>
+                    <li data-i18n="comparison.workflow_step4">Export final data as CSV or other formats</li>
+                </ol>
+            </div>
+        </div>
+    </section>
+
+    <!-- Use Cases Section -->
+    <section>
+        <div class="container">
+            <h2 data-i18n="usecases.title">Use Cases</h2>
+
+            <div class="use-cases">
+                <div class="use-case-card">
+                    <h3 data-i18n="usecases.meta_analysis.title">📊 Meta-Analysis</h3>
+                    <p data-i18n="usecases.meta_analysis.description">Extract data from dozens of published papers for systematic reviews and meta-analyses.</p>
+                </div>
+
+                <div class="use-case-card">
+                    <h3 data-i18n="usecases.literature_review.title">📚 Literature Review</h3>
+                    <p data-i18n="usecases.literature_review.description">Process multiple similar charts from the same research domain quickly.</p>
+                </div>
+
+                <div class="use-case-card">
+                    <h3 data-i18n="usecases.data_recovery.title">🔄 Data Recovery</h3>
+                    <p data-i18n="usecases.data_recovery.description">Recover numerical data from old publications where raw data is no longer available.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section>
+        <div class="container">
+            <h2 data-i18n="faq.title">Frequently Asked Questions</h2>
+
+            <div class="faq-section">
+                <div class="faq-item">
+                    <h3 data-i18n="faq.difference.question">How is this different from WebPlotDigitizer?</h3>
+                    <p data-i18n="faq.difference.answer">AutoLineDigitizer automates line detection and axis calibration using AI (LineFormer + OCR). WebPlotDigitizer gives you more manual control and precision. They work great together! Use AutoLineDigitizer for batch processing, then WebPlotDigitizer for refinement.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3 data-i18n="faq.accuracy.question">Is it accurate?</h3>
+                    <p data-i18n="faq.accuracy.answer">Works well for simple line charts with clear axes. For complex plots with overlapping lines or unclear axes, use WebPlotDigitizer for final refinement. Always verify important data manually.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3 data-i18n="faq.formats.question">What formats does it export?</h3>
+                    <p data-i18n="faq.formats.answer">CSV (comma-separated values), WebPlotDigitizer TAR format (for import and refinement), and StarryDigitizer ZIP format.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3 data-i18n="faq.offline.question">Does it work offline?</h3>
+                    <p data-i18n="faq.offline.answer">Yes! All AI models (LineFormer, ChartDete, EasyOCR) are bundled with the application. No internet connection required after installation.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3 data-i18n="faq.better.question">Which is better, AutoLineDigitizer or WebPlotDigitizer?</h3>
+                    <p data-i18n="faq.better.answer">They're complementary tools, not competitors! AutoLineDigitizer excels at batch processing and initial extraction. WebPlotDigitizer excels at precision and complex plots. Use both for the best workflow.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3 data-i18n="faq.privacy.question">Is my data private?</h3>
+                    <p data-i18n="faq.privacy.answer">Absolutely! All processing happens locally on your computer. No data is sent to external servers. Your research data never leaves your machine.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technical Details Section -->
+    <section>
+        <div class="container">
+            <h2 data-i18n="technical.title">Technical Details</h2>
+
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <h3 data-i18n="technical.line_detection.title">Line Detection</h3>
+                    <p data-i18n="technical.line_detection.description">Uses LineFormer, a deep learning model presented at ICDAR 2023, specifically trained on academic and scientific chart images.</p>
+                    <ul>
+                        <li data-i18n="technical.line_detection.feature1">Detects multiple lines simultaneously</li>
+                        <li data-i18n="technical.line_detection.feature2">Handles various line styles and colors</li>
+                        <li data-i18n="technical.line_detection.feature3">Trained on diverse chart types</li>
+                    </ul>
+                </div>
+
+                <div class="tech-card">
+                    <h3 data-i18n="technical.axis_recognition.title">Axis Recognition</h3>
+                    <p data-i18n="technical.axis_recognition.description">Combines ChartDete (chart element detection) with EasyOCR for automatic axis label reading.</p>
+                    <ul>
+                        <li data-i18n="technical.axis_recognition.feature1">Detects axis labels automatically</li>
+                        <li data-i18n="technical.axis_recognition.feature2">Reads numeric values via OCR</li>
+                        <li data-i18n="technical.axis_recognition.feature3">Supports log and linear scales</li>
+                    </ul>
+                </div>
+
+                <div class="tech-card">
+                    <h3 data-i18n="technical.privacy.title">Privacy & Security</h3>
+                    <p data-i18n="technical.privacy.description">All processing happens locally on your computer with bundled AI models.</p>
+                    <ul>
+                        <li data-i18n="technical.privacy.feature1">No data sent to servers</li>
+                        <li data-i18n="technical.privacy.feature2">Works completely offline</li>
+                        <li data-i18n="technical.privacy.feature3">Open source (MIT License)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <footer>
         <div class="container">
             <p>&copy; 2026 AutoLineDigitizer | <a href="https://github.com/t29mato/AutoLineDigitizer">GitHub</a> | MIT License</p>
@@ -531,7 +858,69 @@
                 'installation.macos.step4': 'Models will be downloaded automatically on first launch',
                 'installation.windows.step1': 'Download <code>AutoLineDigitizer-Windows.zip</code> from ',
                 'installation.windows.step2': 'Unzip and run <code>AutoLineDigitizer\\AutoLineDigitizer.exe</code>',
-                'installation.windows.step3': 'Models will be downloaded automatically on first launch'
+                'installation.windows.step3': 'Models will be downloaded automatically on first launch',
+                'comparison.title': 'WebPlotDigitizer vs AutoLineDigitizer',
+                'comparison.feature': 'Feature',
+                'comparison.line_detection': 'Line Detection',
+                'comparison.wpd_line': 'Manual clicking',
+                'comparison.ald_line': 'AI automatic',
+                'comparison.axis_calibration': 'Axis Calibration',
+                'comparison.wpd_axis': 'Manual input',
+                'comparison.ald_axis': 'OCR automatic',
+                'comparison.time': 'Speed',
+                'comparison.wpd_time': 'Manual',
+                'comparison.ald_time': 'Fast',
+                'comparison.precision': 'Precision',
+                'comparison.wpd_precision': 'Very high',
+                'comparison.ald_precision': 'Good',
+                'comparison.complex_plots': 'Complex plots',
+                'comparison.wpd_complex': 'Excellent',
+                'comparison.ald_complex': 'Basic',
+                'comparison.best_for': 'Best for',
+                'comparison.wpd_best': 'All chart types',
+                'comparison.ald_best': 'Line charts',
+                'comparison.platform': 'Platform',
+                'comparison.workflow_title': 'Recommended Workflow: Use Both!',
+                'comparison.workflow_step1': 'Auto-extract lines and axes with AutoLineDigitizer',
+                'comparison.workflow_step2': 'Export to WebPlotDigitizer TAR format',
+                'comparison.workflow_step3': 'Import into WebPlotDigitizer for refinement and verification',
+                'comparison.workflow_step4': 'Export final data as CSV or other formats',
+                'usecases.title': 'Use Cases',
+                'usecases.meta_analysis.title': '📊 Meta-Analysis',
+                'usecases.meta_analysis.description': 'Extract data from dozens of published papers for systematic reviews and meta-analyses.',
+                'usecases.literature_review.title': '📚 Literature Review',
+                'usecases.literature_review.description': 'Process multiple similar charts from the same research domain quickly.',
+                'usecases.data_recovery.title': '🔄 Data Recovery',
+                'usecases.data_recovery.description': 'Recover numerical data from old publications where raw data is no longer available.',
+                'faq.title': 'Frequently Asked Questions',
+                'faq.difference.question': 'How is this different from WebPlotDigitizer?',
+                'faq.difference.answer': 'AutoLineDigitizer automates line detection and axis calibration using AI (LineFormer + OCR). WebPlotDigitizer gives you more manual control and precision. They work great together! Use AutoLineDigitizer for batch processing, then WebPlotDigitizer for refinement.',
+                'faq.accuracy.question': 'Is it accurate?',
+                'faq.accuracy.answer': 'Works well for simple line charts with clear axes. For complex plots with overlapping lines or unclear axes, use WebPlotDigitizer for final refinement. Always verify important data manually.',
+                'faq.formats.question': 'What formats does it export?',
+                'faq.formats.answer': 'CSV (comma-separated values), WebPlotDigitizer TAR format (for import and refinement), and StarryDigitizer ZIP format.',
+                'faq.offline.question': 'Does it work offline?',
+                'faq.offline.answer': 'Yes! All AI models (LineFormer, ChartDete, EasyOCR) are bundled with the application. No internet connection required after installation.',
+                'faq.better.question': 'Which is better, AutoLineDigitizer or WebPlotDigitizer?',
+                'faq.better.answer': "They're complementary tools, not competitors! AutoLineDigitizer excels at batch processing and initial extraction. WebPlotDigitizer excels at precision and complex plots. Use both for the best workflow.",
+                'faq.privacy.question': 'Is my data private?',
+                'faq.privacy.answer': 'Absolutely! All processing happens locally on your computer. No data is sent to external servers. Your research data never leaves your machine.',
+                'technical.title': 'Technical Details',
+                'technical.line_detection.title': 'Line Detection',
+                'technical.line_detection.description': 'Uses LineFormer, a deep learning model presented at ICDAR 2023, specifically trained on academic and scientific chart images.',
+                'technical.line_detection.feature1': 'Detects multiple lines simultaneously',
+                'technical.line_detection.feature2': 'Handles various line styles and colors',
+                'technical.line_detection.feature3': 'Trained on diverse chart types',
+                'technical.axis_recognition.title': 'Axis Recognition',
+                'technical.axis_recognition.description': 'Combines ChartDete (chart element detection) with EasyOCR for automatic axis label reading.',
+                'technical.axis_recognition.feature1': 'Detects axis labels automatically',
+                'technical.axis_recognition.feature2': 'Reads numeric values via OCR',
+                'technical.axis_recognition.feature3': 'Supports log and linear scales',
+                'technical.privacy.title': 'Privacy & Security',
+                'technical.privacy.description': 'All processing happens locally on your computer with bundled AI models.',
+                'technical.privacy.feature1': 'No data sent to servers',
+                'technical.privacy.feature2': 'Works completely offline',
+                'technical.privacy.feature3': 'Open source (MIT License)'
             },
             ja: {
                 'header.description': 'チャートから自動的にラインデータを抽出するデスクトップアプリケーション',
@@ -562,7 +951,69 @@
                 'installation.macos.step4': '初回起動時にモデルが自動的にダウンロードされます',
                 'installation.windows.step1': '<a href="https://github.com/t29mato/AutoLineDigitizer/releases">Releases</a>から<code>AutoLineDigitizer-Windows.zip</code>をダウンロード',
                 'installation.windows.step2': '解凍して<code>AutoLineDigitizer\\AutoLineDigitizer.exe</code>を実行',
-                'installation.windows.step3': '初回起動時にモデルが自動的にダウンロードされます'
+                'installation.windows.step3': '初回起動時にモデルが自動的にダウンロードされます',
+                'comparison.title': 'WebPlotDigitizer vs AutoLineDigitizer',
+                'comparison.feature': '機能',
+                'comparison.line_detection': 'ライン検出',
+                'comparison.wpd_line': '手動クリック',
+                'comparison.ald_line': 'AI自動',
+                'comparison.axis_calibration': '軸キャリブレーション',
+                'comparison.wpd_axis': '手動入力',
+                'comparison.ald_axis': 'OCR自動',
+                'comparison.time': '速度',
+                'comparison.wpd_time': '手動',
+                'comparison.ald_time': '高速',
+                'comparison.precision': '精度',
+                'comparison.wpd_precision': '非常に高い',
+                'comparison.ald_precision': '良好',
+                'comparison.complex_plots': '複雑なプロット',
+                'comparison.wpd_complex': '優秀',
+                'comparison.ald_complex': '基本的',
+                'comparison.best_for': '最適な用途',
+                'comparison.wpd_best': '全てのチャートタイプ',
+                'comparison.ald_best': 'ラインチャート',
+                'comparison.platform': 'プラットフォーム',
+                'comparison.workflow_title': '推奨ワークフロー: 両方使う！',
+                'comparison.workflow_step1': 'AutoLineDigitizerでラインと軸を自動抽出',
+                'comparison.workflow_step2': 'WebPlotDigitizer TAR形式でエクスポート',
+                'comparison.workflow_step3': 'WebPlotDigitizerにインポートして調整・検証',
+                'comparison.workflow_step4': '最終データをCSVなどの形式でエクスポート',
+                'usecases.title': 'ユースケース',
+                'usecases.meta_analysis.title': '📊 メタアナリシス',
+                'usecases.meta_analysis.description': '系統的レビューやメタアナリシスのために、数十本の論文からデータを抽出します。',
+                'usecases.literature_review.title': '📚 文献レビュー',
+                'usecases.literature_review.description': '同じ研究分野の類似したチャートを迅速に処理します。',
+                'usecases.data_recovery.title': '🔄 データ復元',
+                'usecases.data_recovery.description': '生データが利用できなくなった古い出版物から数値データを復元します。',
+                'faq.title': 'よくある質問',
+                'faq.difference.question': 'WebPlotDigitizerとの違いは？',
+                'faq.difference.answer': 'AutoLineDigitizerはAI（LineFormer + OCR）を使用してライン検出と軸キャリブレーションを自動化します。WebPlotDigitizerは手動制御と精度に優れています。両方を組み合わせると素晴らしい結果が得られます！バッチ処理にはAutoLineDigitizerを使用し、調整にはWebPlotDigitizerを使用してください。',
+                'faq.accuracy.question': '精度は？',
+                'faq.accuracy.answer': '明確な軸を持つシンプルなラインチャートには有効です。重なり合うラインや不明瞭な軸を持つ複雑なプロットの場合は、最終調整にWebPlotDigitizerを使用してください。重要なデータは必ず手動で検証してください。',
+                'faq.formats.question': 'エクスポート形式は？',
+                'faq.formats.answer': 'CSV（カンマ区切り値）、WebPlotDigitizer TAR形式（インポートと調整用）、StarryDigitizer ZIP形式に対応しています。',
+                'faq.offline.question': 'オフラインで動作しますか？',
+                'faq.offline.answer': 'はい！すべてのAIモデル（LineFormer、ChartDete、EasyOCR）がアプリケーションにバンドルされています。インストール後はインターネット接続は不要です。',
+                'faq.better.question': 'AutoLineDigitizerとWebPlotDigitizer、どちらが優れていますか？',
+                'faq.better.answer': '競合ツールではなく、相補的なツールです！AutoLineDigitizerはバッチ処理と初期抽出に優れています。WebPlotDigitizerは精度と複雑なプロットに優れています。最高のワークフローのために両方を使用してください。',
+                'faq.privacy.question': 'データはプライベートですか？',
+                'faq.privacy.answer': '絶対に！すべての処理はコンピューター上でローカルに行われます。外部サーバーにデータは送信されません。研究データはマシンから出ることはありません。',
+                'technical.title': '技術詳細',
+                'technical.line_detection.title': 'ライン検出',
+                'technical.line_detection.description': 'ICDAR 2023で発表されたディープラーニングモデルLineFormerを使用。学術・科学チャート画像に特化して訓練されています。',
+                'technical.line_detection.feature1': '複数のラインを同時に検出',
+                'technical.line_detection.feature2': '様々なラインスタイルと色に対応',
+                'technical.line_detection.feature3': '多様なチャートタイプで訓練',
+                'technical.axis_recognition.title': '軸認識',
+                'technical.axis_recognition.description': 'ChartDete（チャート要素検出）とEasyOCRを組み合わせて軸ラベルを自動読み取り。',
+                'technical.axis_recognition.feature1': '軸ラベルを自動検出',
+                'technical.axis_recognition.feature2': 'OCRで数値を読み取り',
+                'technical.axis_recognition.feature3': '対数スケールと線形スケールに対応',
+                'technical.privacy.title': 'プライバシー & セキュリティ',
+                'technical.privacy.description': 'すべての処理は、バンドルされたAIモデルを使用してコンピューター上でローカルに行われます。',
+                'technical.privacy.feature1': 'サーバーにデータを送信しない',
+                'technical.privacy.feature2': '完全にオフラインで動作',
+                'technical.privacy.feature3': 'オープンソース（MITライセンス）'
             }
         };
 
