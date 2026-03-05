@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Automatic line chart data extraction desktop application using LineFormer, ChartDete, and EasyOCR for precise axis detection and data digitization.">
+    <meta name="keywords" content="chart digitizer, data extraction, LineFormer, plot digitizer, graph digitizer, OCR, scientific data">
+    <meta name="author" content="AutoLineDigitizer">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://t29mato.github.io/AutoLineDigitizer/">
+
+    <!-- Open Graph Tags -->
+    <meta property="og:title" content="AutoLineDigitizer - Automatic Chart Digitizer">
+    <meta property="og:description" content="Extract data from line charts automatically using AI-powered LineFormer, ChartDete, and EasyOCR technologies.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://t29mato.github.io/AutoLineDigitizer/">
+    <meta property="og:image" content="https://raw.githubusercontent.com/t29mato/AutoLineDigitizer/main/demo/10.3390_nano14040384_4i_result.png">
+    <meta property="og:site_name" content="AutoLineDigitizer">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:locale:alternate" content="ja_JP">
+
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="AutoLineDigitizer - Automatic Chart Digitizer">
+    <meta name="twitter:description" content="Extract data from line charts automatically using AI-powered LineFormer, ChartDete, and EasyOCR technologies.">
+    <meta name="twitter:image" content="https://raw.githubusercontent.com/t29mato/AutoLineDigitizer/main/demo/10.3390_nano14040384_4i_result.png">
+
+    <title>AutoLineDigitizer - Automatic Chart Digitizer</title>
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "AutoLineDigitizer",
+      "applicationCategory": "DesignApplication",
+      "operatingSystem": ["macOS", "Windows"],
+      "description": "A desktop application for automatic line chart data extraction using LineFormer with automatic axis detection via ChartDete and EasyOCR.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "author": {
+        "@type": "Organization",
+        "name": "AutoLineDigitizer"
+      },
+      "downloadUrl": "https://github.com/t29mato/AutoLineDigitizer/releases",
+      "softwareVersion": "latest",
+      "screenshot": "https://raw.githubusercontent.com/t29mato/AutoLineDigitizer/main/demo/10.3390_nano14040384_4i_result.png"
+    }
+    </script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .lang-switcher {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+            background: white;
+            padding: 8px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .lang-btn {
+            padding: 8px 16px;
+            border: none;
+            background: #e2e8f0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .lang-btn:hover {
+            background: #cbd5e0;
+        }
+
+        .lang-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 0;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        header p {
+            font-size: 1.3em;
+            opacity: 0.95;
+            max-width: 800px;
+            margin: 0 auto 30px;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 40px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1em;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-primary {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        section {
+            padding: 80px 0;
+        }
+
+        section:nth-child(even) {
+            background: white;
+        }
+
+        h2 {
+            font-size: 2.5em;
+            margin-bottom: 40px;
+            text-align: center;
+            color: #2d3748;
+        }
+
+        .demo-section {
+            text-align: center;
+        }
+
+        .demo-video {
+            max-width: 900px;
+            margin: 0 auto 30px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+
+        .demo-video video {
+            width: 100%;
+            display: block;
+        }
+
+        .demo-note {
+            color: #718096;
+            font-style: italic;
+            margin-bottom: 40px;
+        }
+
+        .demo-images {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .demo-image {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .demo-image h3 {
+            margin-bottom: 15px;
+            color: #4a5568;
+        }
+
+        .demo-image img {
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .feature-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .feature-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .installation-steps {
+            max-width: 800px;
+            margin: 40px auto;
+        }
+
+        .platform-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+
+        .tab-button {
+            padding: 12px 30px;
+            background: #e2e8f0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .tab-button.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .tab-content ol {
+            margin-left: 20px;
+        }
+
+        .tab-content li {
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+
+        .note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .note strong {
+            color: #856404;
+        }
+
+        footer {
+            background: #2d3748;
+            color: white;
+            padding: 40px 0;
+            text-align: center;
+        }
+
+        footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2em;
+            }
+
+            header p {
+                font-size: 1.1em;
+            }
+
+            h2 {
+                font-size: 2em;
+            }
+
+            .demo-images {
+                grid-template-columns: 1fr;
+            }
+
+            .lang-switcher {
+                top: 10px;
+                right: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Language Switcher -->
+    <div class="lang-switcher">
+        <button class="lang-btn active" onclick="switchLanguage('en')" data-lang="en">English</button>
+        <button class="lang-btn" onclick="switchLanguage('ja')" data-lang="ja">日本語</button>
+    </div>
+
+    <header>
+        <div class="container">
+            <h1>AutoLineDigitizer</h1>
+            <p data-i18n="header.description">Automatic line chart data extraction desktop application</p>
+            <p style="font-size: 1em;" data-i18n="header.subtitle">High-precision automatic axis detection with LineFormer × ChartDete × EasyOCR</p>
+
+            <div class="download-buttons">
+                <a href="https://github.com/t29mato/AutoLineDigitizer/releases" class="btn btn-primary">
+                    <span data-i18n="download">📥 Download</span>
+                </a>
+                <a href="https://github.com/t29mato/AutoLineDigitizer" class="btn btn-secondary">
+                    💻 GitHub
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <section class="demo-section">
+        <div class="container">
+            <h2 data-i18n="demo.title">Demo</h2>
+
+            <div class="demo-video">
+                <video controls poster="https://github.com/user-attachments/assets/7ecb641e-f939-40a5-ad7b-54b64937fdd4">
+                    <source src="https://github.com/user-attachments/assets/7ecb641e-f939-40a5-ad7b-54b64937fdd4" type="video/mp4">
+                    <span data-i18n="demo.video_not_supported">Your browser does not support the video tag.</span>
+                </video>
+            </div>
+
+            <p class="demo-note" data-i18n="demo.note">
+                Note: This demo video shows an earlier Streamlit-based version. The current version uses a Flet-based desktop app with a different UI, but the core functionality is the same.
+            </p>
+
+            <div class="demo-images">
+                <div class="demo-image">
+                    <h3 data-i18n="demo.input">Input Image</h3>
+                    <img src="https://raw.githubusercontent.com/t29mato/AutoLineDigitizer/main/demo/10.3390_nano14040384_4i.png" alt="Input chart image">
+                </div>
+                <div class="demo-image">
+                    <h3 data-i18n="demo.output">Extraction Result</h3>
+                    <img src="https://raw.githubusercontent.com/t29mato/AutoLineDigitizer/main/demo/10.3390_nano14040384_4i_result.png" alt="Extraction result">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <div class="container">
+            <h2 data-i18n="features.title">Key Features</h2>
+            <div class="features">
+                <div class="feature-card">
+                    <div class="feature-icon">📈</div>
+                    <h3 data-i18n="features.line_extraction.title">Line Extraction</h3>
+                    <p data-i18n="features.line_extraction.description">Automatic line detection using LineFormer extracts multiple lines from charts with high precision.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3 data-i18n="features.axis_detection.title">Automatic Axis Detection</h3>
+                    <p data-i18n="features.axis_detection.description">Automatic axis label reading via ChartDete + OCR provides accurate values without manual configuration.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">💾</div>
+                    <h3 data-i18n="features.export_formats.title">Multiple Export Formats</h3>
+                    <p data-i18n="features.export_formats.description">Supports export in StarryDigitizer ZIP format and WebPlotDigitizer TAR format.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <div class="container">
+            <h2 data-i18n="installation.title">Installation</h2>
+
+            <div class="installation-steps">
+                <div class="platform-tabs">
+                    <button class="tab-button active" onclick="switchTab('macos')">macOS</button>
+                    <button class="tab-button" onclick="switchTab('windows')">Windows</button>
+                </div>
+
+                <div id="macos-content" class="tab-content active">
+                    <h3>macOS (Apple Silicon)</h3>
+                    <div class="note">
+                        <strong data-i18n="installation.macos.note_label">Note:</strong>
+                        <span data-i18n="installation.macos.note_text">Intel Mac is not currently supported. Apple Silicon (M1/M2/M3/M4) only.</span>
+                    </div>
+
+                    <ol>
+                        <li>
+                            <span data-i18n="installation.macos.step1">Download <code>AutoLineDigitizer-macOS.zip</code> from </span>
+                            <a href="https://github.com/t29mato/AutoLineDigitizer/releases">Releases</a>
+                        </li>
+                        <li data-i18n="installation.macos.step2">Unzip and move <code>AutoLineDigitizer.app</code> to Applications folder</li>
+                        <li>
+                            <span data-i18n="installation.macos.step3_intro">On first launch, macOS will show a warning: </span>
+                            <strong data-i18n="installation.macos.step3_warning">"AutoLineDigitizer.app cannot be opened because the developer cannot be verified."</strong>
+                            <ul>
+                                <li data-i18n="installation.macos.step3_1">Click <strong>Cancel</strong> (not "Move to Trash")</li>
+                                <li data-i18n="installation.macos.step3_2">Go to <strong>System Settings → Privacy & Security</strong>, scroll down and click <strong>"Open Anyway"</strong></li>
+                                <li data-i18n="installation.macos.step3_3">Or: <strong>Right-click</strong> the app → <strong>Open</strong> → click <strong>Open</strong> in the dialog</li>
+                            </ul>
+                        </li>
+                        <li data-i18n="installation.macos.step4">Models will be downloaded automatically on first launch</li>
+                    </ol>
+                </div>
+
+                <div id="windows-content" class="tab-content">
+                    <h3>Windows</h3>
+                    <ol>
+                        <li>
+                            <span data-i18n="installation.windows.step1">Download <code>AutoLineDigitizer-Windows.zip</code> from </span>
+                            <a href="https://github.com/t29mato/AutoLineDigitizer/releases">Releases</a>
+                        </li>
+                        <li data-i18n="installation.windows.step2">Unzip and run <code>AutoLineDigitizer\AutoLineDigitizer.exe</code></li>
+                        <li data-i18n="installation.windows.step3">Models will be downloaded automatically on first launch</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 AutoLineDigitizer | <a href="https://github.com/t29mato/AutoLineDigitizer">GitHub</a> | MIT License</p>
+            <p style="margin-top: 10px; opacity: 0.8;">
+                Powered by <a href="https://github.com/TheJaeLal/LineFormer">LineFormer</a>,
+                <a href="https://github.com/pengyu965/ChartDete/">ChartDete</a>,
+                <a href="https://github.com/JaidedAI/EasyOCR">EasyOCR</a>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Translation data
+        const translations = {
+            en: {
+                'header.description': 'Automatic line chart data extraction desktop application',
+                'header.subtitle': 'High-precision automatic axis detection with LineFormer × ChartDete × EasyOCR',
+                'download': '📥 Download',
+                'demo.title': 'Demo',
+                'demo.video_not_supported': 'Your browser does not support the video tag.',
+                'demo.note': 'Note: This demo video shows an earlier Streamlit-based version. The current version uses a Flet-based desktop app with a different UI, but the core functionality is the same.',
+                'demo.input': 'Input Image',
+                'demo.output': 'Extraction Result',
+                'features.title': 'Key Features',
+                'features.line_extraction.title': 'Line Extraction',
+                'features.line_extraction.description': 'Automatic line detection using LineFormer extracts multiple lines from charts with high precision.',
+                'features.axis_detection.title': 'Automatic Axis Detection',
+                'features.axis_detection.description': 'Automatic axis label reading via ChartDete + OCR provides accurate values without manual configuration.',
+                'features.export_formats.title': 'Multiple Export Formats',
+                'features.export_formats.description': 'Supports export in StarryDigitizer ZIP format and WebPlotDigitizer TAR format.',
+                'installation.title': 'Installation',
+                'installation.macos.note_label': 'Note:',
+                'installation.macos.note_text': 'Intel Mac is not currently supported. Apple Silicon (M1/M2/M3/M4) only.',
+                'installation.macos.step1': 'Download <code>AutoLineDigitizer-macOS.zip</code> from ',
+                'installation.macos.step2': 'Unzip and move <code>AutoLineDigitizer.app</code> to Applications folder',
+                'installation.macos.step3_intro': 'On first launch, macOS will show a warning: ',
+                'installation.macos.step3_warning': '"AutoLineDigitizer.app cannot be opened because the developer cannot be verified."',
+                'installation.macos.step3_1': 'Click <strong>Cancel</strong> (not "Move to Trash")',
+                'installation.macos.step3_2': 'Go to <strong>System Settings → Privacy & Security</strong>, scroll down and click <strong>"Open Anyway"</strong>',
+                'installation.macos.step3_3': 'Or: <strong>Right-click</strong> the app → <strong>Open</strong> → click <strong>Open</strong> in the dialog',
+                'installation.macos.step4': 'Models will be downloaded automatically on first launch',
+                'installation.windows.step1': 'Download <code>AutoLineDigitizer-Windows.zip</code> from ',
+                'installation.windows.step2': 'Unzip and run <code>AutoLineDigitizer\\AutoLineDigitizer.exe</code>',
+                'installation.windows.step3': 'Models will be downloaded automatically on first launch'
+            },
+            ja: {
+                'header.description': 'チャートから自動的にラインデータを抽出するデスクトップアプリケーション',
+                'header.subtitle': 'LineFormer × ChartDete × EasyOCRによる高精度な自動軸検出',
+                'download': '📥 ダウンロード',
+                'demo.title': 'デモ',
+                'demo.video_not_supported': 'お使いのブラウザは動画タグをサポートしていません。',
+                'demo.note': '※ このデモ動画は以前のStreamlitベースのバージョンを示しています。現在のバージョンはFletベースのデスクトップアプリで異なるUIですが、コア機能は同じです。',
+                'demo.input': '入力画像',
+                'demo.output': '抽出結果',
+                'features.title': '主な機能',
+                'features.line_extraction.title': 'ライン抽出',
+                'features.line_extraction.description': 'LineFormerを使用した自動ライン検出により、チャート内の複数のラインを高精度で抽出します。',
+                'features.axis_detection.title': '軸自動検出',
+                'features.axis_detection.description': 'ChartDete + OCRによる軸ラベルの自動読み取りで、手動設定なしで正確な数値を取得できます。',
+                'features.export_formats.title': '多様な出力形式',
+                'features.export_formats.description': 'StarryDigitizer ZIP形式とWebPlotDigitizer TAR形式でのエクスポートに対応。',
+                'installation.title': 'インストール',
+                'installation.macos.note_label': '注意:',
+                'installation.macos.note_text': 'Intel Macは現在サポートされていません。Apple Silicon (M1/M2/M3/M4) のみ対応しています。',
+                'installation.macos.step1': '<a href="https://github.com/t29mato/AutoLineDigitizer/releases">Releases</a>から<code>AutoLineDigitizer-macOS.zip</code>をダウンロード',
+                'installation.macos.step2': '解凍して<code>AutoLineDigitizer.app</code>をアプリケーションフォルダに移動',
+                'installation.macos.step3_intro': '初回起動時、macOSが警告を表示します: ',
+                'installation.macos.step3_warning': '「AutoLineDigitizer.appは開発者を確認できないため開けません」',
+                'installation.macos.step3_1': '<strong>キャンセル</strong>をクリック（「ゴミ箱に入れる」ではありません）',
+                'installation.macos.step3_2': '<strong>システム設定 → プライバシーとセキュリティ</strong>に移動し、下にスクロールして<strong>「このまま開く」</strong>をクリック',
+                'installation.macos.step3_3': 'または: アプリを<strong>右クリック → 開く → ダイアログで「開く」</strong>をクリック',
+                'installation.macos.step4': '初回起動時にモデルが自動的にダウンロードされます',
+                'installation.windows.step1': '<a href="https://github.com/t29mato/AutoLineDigitizer/releases">Releases</a>から<code>AutoLineDigitizer-Windows.zip</code>をダウンロード',
+                'installation.windows.step2': '解凍して<code>AutoLineDigitizer\\AutoLineDigitizer.exe</code>を実行',
+                'installation.windows.step3': '初回起動時にモデルが自動的にダウンロードされます'
+            }
+        };
+
+        // Get browser language
+        function getBrowserLanguage() {
+            const lang = navigator.language || navigator.userLanguage;
+            return lang.startsWith('ja') ? 'ja' : 'en';
+        }
+
+        // Switch language
+        function switchLanguage(lang) {
+            // Save to localStorage
+            localStorage.setItem('preferred-language', lang);
+
+            // Update HTML lang attribute
+            document.documentElement.lang = lang;
+
+            // Update meta tags
+            const description = lang === 'ja'
+                ? 'チャートから自動的にラインデータを抽出するデスクトップアプリケーション。LineFormer、ChartDete、EasyOCRを使用した高精度な自動軸検出。'
+                : 'Automatic line chart data extraction desktop application using LineFormer, ChartDete, and EasyOCR for precise axis detection and data digitization.';
+
+            const title = lang === 'ja'
+                ? 'AutoLineDigitizer - 自動チャートデジタイザー'
+                : 'AutoLineDigitizer - Automatic Chart Digitizer';
+
+            document.querySelector('meta[name="description"]').setAttribute('content', description);
+            document.querySelector('meta[property="og:description"]').setAttribute('content', description);
+            document.querySelector('meta[name="twitter:description"]').setAttribute('content', description);
+            document.title = title;
+            document.querySelector('meta[property="og:title"]').setAttribute('content', title);
+            document.querySelector('meta[name="twitter:title"]').setAttribute('content', title);
+
+            // Update button states
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+            });
+
+            // Update all translatable elements
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                if (translations[lang][key]) {
+                    element.innerHTML = translations[lang][key];
+                }
+            });
+        }
+
+        // Platform tab switching
+        function switchTab(platform) {
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(platform + '-content').classList.add('active');
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedLang = localStorage.getItem('preferred-language') || getBrowserLanguage();
+            switchLanguage(savedLang);
+        });
+    </script>
+</body>
+</html>
