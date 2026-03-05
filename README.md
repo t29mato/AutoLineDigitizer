@@ -8,6 +8,8 @@ A desktop application for automatic line chart data extraction using [LineFormer
 
 https://github.com/user-attachments/assets/7ecb641e-f939-40a5-ad7b-54b64937fdd4
 
+> **Note:** This demo video shows an earlier Streamlit-based version. The current version uses a Flet-based desktop app with a different UI, but the core functionality is the same.
+
 ### Input / Output
 
 | Input | Output |
