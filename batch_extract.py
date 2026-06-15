@@ -76,10 +76,17 @@ except Exception as _vlm_err:
     _VLM_IMPORT_ERROR = str(_vlm_err)
 
 
+# Figure extraction lives in pdf_figures.py (shared with desktop_app.py so the
+# GUI can reuse it without a circular import). Re-exported here for any callers
+# that still reference batch_extract.extract_figures.
+from pdf_figures import (
+    extract_figures,
+    extract_figures_via_page_render,
+    FIGURE_PATTERN,
+)
+
 # DOI regex (Crossref's recommended pattern).
 DOI_PATTERN = re.compile(r'\b10\.\d{4,9}/[-._;()/:A-Z0-9]+\b', re.IGNORECASE)
-# Figure caption line opener, e.g. "Fig. 3", "Figure 12b".
-FIGURE_PATTERN = re.compile(r'^(fig(?:ure)?\.?\s*\d+[a-z]?)', re.IGNORECASE)
 
 
 def safe_paper_id(pdf_path):
@@ -116,231 +123,6 @@ def try_extract_doi(pdf_path):
     finally:
         doc.close()
     return doi
-
-
-def extract_figures(pdf_path, min_size=200, min_aspect=0.3, max_aspect=4.0):
-    """
-    Yield (image_bgr, meta) for each plausible raster figure in a PDF.
-
-    Filters by minimum pixel size and aspect ratio to skip logos, icons,
-    rules, and tiny inline glyphs. Tries to attach the nearest "Fig N..."
-    caption found below the image on the same page.
-
-    Note: only raster (embedded bitmap) figures are extracted. Pure-vector
-    figures (some matplotlib-to-PDF exports) won't appear here; those need a
-    page-render-and-crop step, which is out of scope for this MVP.
-    """
-    try:
-        from PIL import Image
-    except ImportError:
-        print("ERROR: Pillow is required. Install it with: pip install pillow")
-        sys.exit(1)
-
-    try:
-        doc = fitz.open(pdf_path)
-    except Exception as e:
-        print(f"    [open fail] {e}")
-        return
-
-    try:
-        for page_idx, page in enumerate(doc, start=1):
-            try:
-                image_list = page.get_images(full=True)
-            except Exception:
-                image_list = []
-            if not image_list:
-                continue
-
-            try:
-                text_blocks = page.get_text("blocks")
-            except Exception:
-                text_blocks = []
-
-            for img_idx, img_info in enumerate(image_list, start=1):
-                xref = img_info[0]
-                try:
-                    base = doc.extract_image(xref)
-                except Exception:
-                    continue
-                img_bytes = base.get("image")
-                ext = base.get("ext", "png")
-                if not img_bytes:
-                    continue
-                try:
-                    pil = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-                except Exception:
-                    continue
-
-                w, h = pil.size
-                if w < min_size or h < min_size:
-                    continue
-                ar = w / max(1, h)
-                if ar < min_aspect or ar > max_aspect:
-                    continue
-
-                # Locate this image's bbox on the page (for caption matching).
-                bbox = None
-                try:
-                    rects = page.get_image_rects(xref)
-                    if rects:
-                        bbox = rects[0]
-                except Exception:
-                    bbox = None
-
-                caption = ""
-                if bbox is not None and text_blocks:
-                    candidates = []
-                    for tb in text_blocks:
-                        if len(tb) < 5:
-                            continue
-                        x0, y0, x1, y1, text = tb[0], tb[1], tb[2], tb[3], tb[4]
-                        # text block starting just below the image
-                        if y0 >= bbox.y1 - 8:
-                            t = (text or "").strip().replace("\n", " ")
-                            if FIGURE_PATTERN.match(t):
-                                candidates.append((y0 - bbox.y1, t))
-                    if candidates:
-                        candidates.sort(key=lambda c: abs(c[0]))
-                        caption = candidates[0][1][:500]
-
-                arr_rgb = np.array(pil)
-                arr_bgr = cv2.cvtColor(arr_rgb, cv2.COLOR_RGB2BGR)
-                yield arr_bgr, {
-                    "page": page_idx,
-                    "img_idx_on_page": img_idx,
-                    "width": int(w),
-                    "height": int(h),
-                    "caption": caption,
-                    "format": ext,
-                }
-    finally:
-        doc.close()
-
-
-def extract_figures_via_page_render(pdf_path, screener, dpi=200, min_size=200,
-                                     page_vlm_model=None, verbose=False):
-    """
-    Render each PDF page and use the VLM to find chart bounding boxes,
-    yielding cropped chart images. This is the path for papers whose figures
-    are vector PDF graphics (no embedded bitmap), where extract_figures()
-    misses everything.
-
-    For each page:
-      1. Render at the requested DPI
-      2. Send the page image to screener.screen_page() to get a list of
-         normalised chart bboxes
-      3. For each extractable chart, crop the page image and yield it with
-         provenance metadata (page index, bbox, VLM verdict, etc.)
-
-    Yields (image_bgr, meta) where meta also contains "vlm_chart" (the page-
-    level VLM judgement on this region) so the caller can attach it to the
-    final per-figure metadata.
-    """
-    if screener is None:
-        return  # Page-render mode requires a VLM screener.
-
-    try:
-        doc = fitz.open(pdf_path)
-    except Exception as e:
-        print(f"    [open fail] {e}")
-        return
-
-    zoom = dpi / 72.0  # PDF default is 72 DPI
-    matrix = fitz.Matrix(zoom, zoom)
-
-    try:
-        for page_idx, page in enumerate(doc, start=1):
-            try:
-                pix = page.get_pixmap(matrix=matrix, alpha=False)
-            except Exception as e:
-                if verbose:
-                    print(f"      [render fail page {page_idx}] {e}")
-                continue
-
-            # Convert the pixmap to a BGR numpy array.
-            try:
-                img_arr = np.frombuffer(pix.samples, dtype=np.uint8)
-                img_arr = img_arr.reshape(pix.height, pix.width, pix.n)
-            except Exception as e:
-                if verbose:
-                    print(f"      [decode fail page {page_idx}] {e}")
-                continue
-
-            if pix.n == 4:
-                img_arr = cv2.cvtColor(img_arr, cv2.COLOR_RGBA2BGR)
-            elif pix.n == 3:
-                img_arr = cv2.cvtColor(img_arr, cv2.COLOR_RGB2BGR)
-            elif pix.n == 1:
-                img_arr = cv2.cvtColor(img_arr, cv2.COLOR_GRAY2BGR)
-            else:
-                if verbose:
-                    print(f"      [unsupported pixmap channels page {page_idx}: n={pix.n}]")
-                continue
-            page_img_bgr = np.ascontiguousarray(img_arr)
-            H, W = page_img_bgr.shape[:2]
-
-            # Ask the VLM which chart regions are on this page.
-            print(f"      page {page_idx} ({W}x{H} px) -> VLM page screen ... ",
-                  end="", flush=True)
-            try:
-                verdict = screener.screen_page(page_img_bgr, model=page_vlm_model)
-            except Exception as e:
-                print(f"VLM error: {e}")
-                continue
-
-            charts = verdict.get("charts", [])
-            n_extractable = sum(1 for c in charts if c.get("extractable", False))
-            print(f"found {len(charts)} chart region(s), {n_extractable} extractable")
-
-            if verbose and "_screening_error" in verdict:
-                print(f"        (page screen error: {verdict['_screening_error']})")
-
-            chart_seq = 0
-            for chart in charts:
-                if not chart.get("extractable", False):
-                    if verbose:
-                        ct = chart.get("chart_type", "?")
-                        lbl = chart.get("figure_label", "")
-                        reason = chart.get("reason", "")[:80]
-                        print(f"        skip region [{lbl} {ct}]: {reason}")
-                    continue
-                bbox = chart.get("bbox_norm")
-                if not bbox or len(bbox) != 4:
-                    continue
-                x0 = max(0, int(round(bbox[0] * W)))
-                y0 = max(0, int(round(bbox[1] * H)))
-                x1 = min(W, int(round(bbox[2] * W)))
-                y1 = min(H, int(round(bbox[3] * H)))
-                # FIX: expand bbox to guarantee axis labels are included
-                # (Sonnet often crops too tight to plot area, clipping tick labels)
-                margin_x = int(0.02 * W)   # 2% — for y-axis labels on left
-                margin_y = int(0.015 * H)  # 1.5% — for x-axis labels on bottom
-                x0 = max(0, x0 - margin_x)
-                y0 = max(0, y0 - margin_y // 2)
-                x1 = min(W, x1 + margin_x // 2)
-                y1 = min(H, y1 + margin_y)
-                if x1 - x0 < min_size or y1 - y0 < min_size:
-                    if verbose:
-                        lbl = chart.get("figure_label", "")
-                        print(f"        skip region [{lbl}]: too small ({x1-x0}x{y1-y0})")
-                    continue
-                crop = page_img_bgr[y0:y1, x0:x1].copy()
-                chart_seq += 1
-                yield crop, {
-                    "page": page_idx,
-                    "img_idx_on_page": chart_seq,
-                    "width": int(x1 - x0),
-                    "height": int(y1 - y0),
-                    "caption": chart.get("figure_label", ""),
-                    "format": "page-render-crop",
-                    "render_dpi": dpi,
-                    "bbox_norm": [float(v) for v in bbox],
-                    "bbox_px": [x0, y0, x1, y1],
-                    "page_size_px": [W, H],
-                    "vlm_chart": chart,
-                }
-    finally:
-        doc.close()
 
 
 def process_figure(app, img_bgr, fig_meta, out_dir, fig_basename, args, screener=None):
@@ -399,12 +181,7 @@ def process_figure(app, img_bgr, fig_meta, out_dir, fig_basename, args, screener
             result["x_axis_name"] = x_name
             result["y_axis_name"] = y_name
 
-        # FIX: ChartDete's detect_axis_calibration sets cached_plot_area
-        # as a side effect; that crop can clip curves at plot edges (e.g. low-V
-        # tails). axis_config is preserved separately, so we reset here.
-        app.cached_plot_area = None
-
-        # 2) Line extraction (full image; axis info kept in app.axis_config).
+        # 2) Line extraction (+ color refinement, uses cached plot area).
         app.data_series = app.extract_lines(img_bgr)
         if not app.data_series:
             result["error"] = "no lines detected"
