@@ -44,7 +44,6 @@ dev = ["ruff"]
 package-dir = { "" = "src" }
 py-modules = [
     "app",
-    "apply_marker_patch",
     "apply_pagerender_patch",
     "batch_extract",
     "chartdete_infer",
