@@ -209,10 +209,8 @@ eval_summary.csv
 # Leftover scratch
 one.py
 run.sh
-apply_*.py
 pdf_extract.py
 pdf_processor.py
-extract_paper.py
 
 # Test scripts
 test_extractor.py
