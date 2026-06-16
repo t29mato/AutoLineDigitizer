@@ -25,10 +25,13 @@ jobs:
             ${{ runner.os }}-pip-
 
       - name: Install build prerequisites
-        run: pip install "setuptools<71" wheel
+        run: pip install "setuptools<71" wheel pyyaml addict yapf
 
       - name: Install torch (special index)
         run: pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install numpy and Pillow
+        run: pip install numpy Pillow
 
       - name: Install mmcv-full (special build)
         run: CC=clang CXX=clang++ CFLAGS='-stdlib=libc++' MMCV_WITH_OPS=1 pip install mmcv-full==1.7.2 --no-build-isolation
@@ -59,10 +62,13 @@ jobs:
             ${{ runner.os }}-pip-
 
       - name: Install build prerequisites
-        run: pip install "setuptools<71" wheel
+        run: pip install "setuptools<71" wheel pyyaml addict yapf
 
       - name: Install torch (special index)
         run: pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install numpy and Pillow
+        run: pip install numpy Pillow
 
       - name: Install mmcv-full (special build)
         run: pip install mmcv-full==1.7.2 --no-build-isolation
