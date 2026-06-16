@@ -58,7 +58,6 @@ py-modules = [
     "pdf_figures",
     "smart_axis_extractor",
     "vlm_extract",
-    "vlm_extract_cli",
     "vlm_screener",
     "vlm_verifier",
 ]
