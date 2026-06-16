@@ -1,0 +1,76 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "autolinedigitizer"
+version = "0.1.0"
+description = "Extract line/marker data from chart figures in papers and PDFs (VLM + LineFormer/ChartDete + MinerU layout)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "Aditya Acharya", email = "aditya.acharya.bme23@itbhu.ac.in" }]
+
+# NOTE: `torch`, `torchvision`, and `mmcv-full` are intentionally NOT listed here.
+# They require a special install and would break `pip install .`:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+#   MMCV_WITH_OPS=1 pip install mmcv-full==1.7.2 --no-build-isolation
+# See `.github/workflows/release.yml` for the canonical install sequence.
+dependencies = [
+    "flet==0.24.1",
+    "opencv-python>=4.8.0",
+    "numpy>=1.24.0",
+    "Pillow",
+    "scipy>=1.9.0",
+    "scikit-image>=0.21.0",
+    "easyocr>=1.7.0",
+    "bresenham",
+    "terminaltables",
+    "matplotlib",
+    "pycocotools",
+    "PyMuPDF",       # `fitz` — PDF figure extraction (pdf_figures, batch_extract)
+    "anthropic",     # VLM extraction/verification (vlm_*, kmds_parallel, extract_paper)
+]
+
+[project.optional-dependencies]
+# `torch`/`mmcv-full` still need the special install above; this only covers build tooling.
+build = ["pyinstaller", "setuptools<71", "wheel", "pyyaml", "addict", "yapf"]
+dev = ["ruff"]
+
+[tool.setuptools]
+# Flat module layout: every module lives directly under src/ and is imported by
+# bare name (e.g. `from pdf_figures import ...`). package-dir maps the bare names
+# to src/ so `pip install .` preserves those imports.
+package-dir = { "" = "src" }
+py-modules = [
+    "app",
+    "apply_marker_patch",
+    "apply_pagerender_patch",
+    "batch_extract",
+    "chartdete_infer",
+    "color_line_extractor",
+    "desktop_app",
+    "evaluate",
+    "extract_paper",
+    "kmds_parallel",
+    "line_marker_detector",
+    "marker_extractor",
+    "pdf_figures",
+    "smart_axis_extractor",
+    "vlm_extract",
+    "vlm_extract_cli",
+    "vlm_screener",
+    "vlm_verifier",
+]
+
+# The mineru_layout package (the only dir with __init__.py) is discovered here.
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# Bundle the data files that modules load at runtime relative to their own folder.
+[tool.setuptools.package-data]
+"*" = ["extraction_prompt.md", "kmds_v15.2.4_nullable.json", "manifest.json"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
