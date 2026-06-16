@@ -10,6 +10,11 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
 authors = [{ name = "Aditya Acharya", email = "aditya.acharya.bme23@itbhu.ac.in" }]
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Image Recognition",
+]
 
 # NOTE: `torch`, `torchvision`, and `mmcv-full` are intentionally NOT listed here.
 # They require a special install and would break `pip install .`:
@@ -33,14 +38,27 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# `torch`/`mmcv-full` still need the special install above; this only covers build tooling.
+# Tooling to reproduce the PyInstaller build locally. (torch/mmcv-full still
+# need the special install documented above.)
 build = ["pyinstaller", "setuptools<71", "wheel", "pyyaml", "addict", "yapf"]
-dev = ["ruff"]
+dev = ["ruff", "pytest"]
+
+[project.urls]
+Homepage = "https://github.com/t29mato/AutoLineDigitizer"
+Repository = "https://github.com/t29mato/AutoLineDigitizer"
+
+# CLI entry points for the batch/headless tools. The Flet GUI (desktop_app)
+# has no plain main(), so it's launched directly: `python src/desktop_app.py`.
+[project.scripts]
+ald-batch-extract = "batch_extract:main"
+ald-evaluate = "evaluate:main"
+ald-extract-paper = "extract_paper:main"
+ald-vlm-extract = "vlm_extract:main"
 
 [tool.setuptools]
 # Flat module layout: every module lives directly under src/ and is imported by
 # bare name (e.g. `from pdf_figures import ...`). package-dir maps the bare names
-# to src/ so `pip install .` preserves those imports.
+# to src/ so an install preserves those imports.
 package-dir = { "" = "src" }
 py-modules = [
     "app",
@@ -64,9 +82,12 @@ py-modules = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
-# Bundle the data files that modules load at runtime relative to their own folder.
-[tool.setuptools.package-data]
-"*" = ["extraction_prompt.md", "kmds_v15.2.4_nullable.json", "manifest.json"]
+# Runtime data files (extraction_prompt.md, kmds_*.json, manifest.json) live
+# top-level in src/ and are loaded relative to each module's __file__. They are
+# NOT declared as package-data because, with this flat module layout, there is
+# no package to attach them to — package-data only applies to packages. An
+# editable install (`pip install -e .`) resolves them fine (modules import from
+# src/ in place); the frozen app bundles them via AutoLineDigitizer.spec.
 
 [tool.ruff]
 line-length = 100
