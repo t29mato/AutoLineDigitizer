@@ -1,0 +1,35 @@
+name: Lint and Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install lint/test dependencies
+        # Intentionally lightweight: no torch/mmcv/flet. The test suite covers
+        # pure-logic and CV-only modules so CI stays fast. Heavier integration
+        # tests can install the full stack from requirements/pyproject later.
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff pytest
+          pip install numpy opencv-python-headless scipy scikit-image
+
+      - name: Lint (ruff)
+        run: ruff check src tests
+
+      - name: Run tests
+        run: pytest -q

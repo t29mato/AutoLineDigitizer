@@ -172,4 +172,51 @@ test_image/
 test_output/
 
 # Claude Code local settings
-.claude/settings.local.json
+.claude/settings.local.json.DS_Store
+pp_doclayoutv2_weights/
+ 
+
+.DS_Store
+pp_doclayoutv2_weights/
+
+# Local backups
+*.backup_*
+*.backup
+*.before_*
+
+# Run outputs
+batch_input/
+batch_output*/
+nature07853_kmds/
+te_marker_*/
+demo/
+
+# Debug/eval artifacts
+*_eval.png
+*_eval_report.txt
+*_pred.zip
+*_side_by_side.html
+*_comparison.html
+ablation_comparison.html
+nocolor_comparison.html
+kmds_paper_viewer_claude.html
+chart_03*
+chart_99*
+synth_test*.png
+te00_real_marker_debug.png
+eval_summary.csv
+
+# Leftover scratch
+one.py
+run.sh
+pdf_extract.py
+pdf_processor.py
+
+# Test scripts
+test_extractor.py
+test_line_marker_detector.py
+test_real_te_synth_style.py
+test_render.py
+
+# Claude Code local state
+.claude/

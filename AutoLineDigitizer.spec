@@ -14,7 +14,7 @@ distutils_imports = collect_submodules('distutils') + collect_submodules('setupt
 mmcv_imports = collect_submodules('mmcv')
 
 a = Analysis(
-    ['desktop_app.py'],
+    ['src/desktop_app.py'],
     pathex=[
         spec_dir,
         os.path.join(spec_dir, 'submodules', 'chartdete'),
@@ -39,6 +39,9 @@ a = Analysis(
         ('submodules/chartdete/configs', 'submodules/chartdete/configs'),
         # src module
         ('src/chartdete_infer.py', 'src'),
+        # KMDS prompt + schema (loaded at runtime relative to SCRIPT_DIR/_MEIPASS)
+        ('src/extraction_prompt.md', '.'),
+        ('src/kmds_v15.2.4_nullable.json', '.'),
         # EasyOCR models (bundled for offline use)
         (os.path.join(spec_dir, 'easyocr_models'), 'easyocr_models'),
     ],
